@@ -1,0 +1,278 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <title>デモ - 統合</title>
+        <link href='https://fonts.googleapis.com/css?family=DM%20Sans' rel='stylesheet' type='text/css'>
+        <style>
+        body {background-color: #f9f7f4;font-family: 'DM Sans', sans-serif;}
+        h2 {color: #ff3621;}
+        h3 {margin-left: 5px}
+        ol {margin-left: 20px; font-family:sans-serif; color: #0873FF;} //E81334 618794
+        ol li {margin-bottom:5px;}
+        td {padding: 5px;border-bottom: 1px solid #ededed;}
+        tr.selected td {color: white;background-color: red;}
+        .monofont {font-family: monospace; font-size: 14px}
+        .content {max-width: 800px; margin: auto; padding-left: 50px}
+        .image-icon-inline {display:inline; vertical-align: middle; margin: 0 10px 0 10px}
+        .instructions-div {padding-left: 5px}
+        </style>
+
+
+            </head>
+            <body onload="loaded()">
+                <div class="content">
+                    <img src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/db-academy-rgb-1200px_no_bg.png" 
+                        alt="Databricks Learning" 
+                        style="width: 600px; margin-left: 100px; margin-right: 100px">
+                <hr>
+                <h1>デモ - 統合</h1><div id="inputs">
+                    <p>以下の2つのフィールドは、このコースで使用されるクエリをカスタマイズするために使用されます。</p>
+                    <p><span style="color:red">注意:</span> 以下の2つのフィールドにカタログ名とユーザー名が含まれていない場合は、Cookieが有効になっていないか、<a href="Demo-Setting-Up-a-Catalog-and-Schema.html" target="_blank">こちら</a>の手順に従う必要があります。</p>
+                    <table>
+                        <tr>
+                            <td style="white-space:nowrap">カタログ名:&nbsp;</td>
+                            <td><input id="catalog_name" type="text" style="width:40em" onchange="update();"></td>
+                        </tr><tr>
+                            <td style="white-space:nowrap">ユーザー名:&nbsp;</td>
+                            <td><input id="username" type="text" style="width:40em" onchange="update();"></td>
+                        </tr>
+                    </table>
+                </div><hr>
+
+
+<div id="step-1-wrapper" style="width:800px;"><div id="step-1-instruction" style="margin-bottom:1em">    
+
+    <h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon">
+    レッスンの目標</h2>
+    <div class="instructions-div">
+    <p>このレッスンの終わりに、次のことができるようになります：</p>
+    <ul>
+        <li>Databricks SQLをFivetranなどのインジェスションツールに接続する方法を説明する。</li>
+        <li>Databricks SQLをTableau、Power BI、Lookerなどの可視化ツールに接続する方法を説明する。</li>
+        <li>Databricks SQL REST APIおよびDatabricks CLIを、エンジニアがDatabricks SQLとプログラム的にやり取りするためのツールとして特定する。</li>
+    </ul></div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-1-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-1-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-1-test-show-btn" type="button" style="display:none;" 
+
+
+                        onclick="document.getElementById('step-1-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-1-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-1-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-1-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-1-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-1-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+
+
+            </div>
+        </div>
+        <div id="step-1-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-2-wrapper" style="width:800px;"><div id="step-2-instruction" style="margin-bottom:1em">
+
+    <h2>
+        <img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon">
+        外部データソースへの接続</h2>
+    <div class="instructions-div">
+        <p><span style="color:red;">注意: このレッスンのこの部分で議論されるパートナーツールに接続するには、Databricks管理者からパートナーコネクションを作成する権限が必要です。</span></p>
+        <p></p>
+        <ol start="1">
+            <li>サイドバーメニューで [新規作成] --> [データの追加] をクリックします</li>
+        </ol>
+        <p>このページで行うことができる多くの接続に注意してください:</p>
+        <ul>
+            <li>"データをアップロード" をクリックすると、以前のコースで説明した小さなファイルアップロードページに移動します</li>
+            <li>"ネイティブインテグレーション" の下の他のボタンをクリックすると、選択したソースからデータを取り込むように構成できるDatabricksノートブックが開きます</li>
+            <li>"Fivetranデータソース" のいずれかのデータソースをクリックすると、Fivetranへの接続を構成するのに役立つウィザードが開きます。注意: 適切な権限が必要です</li>
+            <li>"パートナーコネクトで利用可能なすべてのデータ取り込みパートナーを参照" をクリックすると、Databricks SQLに簡単に接続できる追加のパートナーが表示される新しいタブが開きます</li>
+
+
+        </ul>
+        <p>提供されているインジェスション パートナーを確認した後、タブを閉じて Databricks SQL に戻ります。</p>
+        </div>
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-2-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-2-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-2-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-2-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-2-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+
+
+        <div id="step-2-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-2-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-2-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-2-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-2-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-3-wrapper" style="width:800px;"><div id="step-3-instruction" style="margin-bottom:1em">
+
+    <h2>
+        <img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon">
+        パートナーBIおよび可視化ツールへの接続</h2>
+    <div class="instructions-div">
+
+
+<p><span style="color:red;">注意: このレッスンのこの部分で議論されているパートナーツールに接続するには、Databricks管理者からパートナーコネクションを作成する特権が必要です。</span></p>
+<p>Partner Connectを使用して、サードパーティのBIおよび可視化ツールへの接続を構成できます。</p>
+<ol>
+    <li>サイドバーメニューの一番下にあるPartner Connectをクリックします</li>
+</ol>
+<p>このページには、サードパーティのツールに接続できる多数の接続が含まれていますが、BIおよび可視化に焦点を当てましょう:</p>
+<ul>
+    <li>Microsoft Power BI</li>
+    <li>Tableau</li>
+    <li>Looker（ページの一番下にある）-- この接続は手動で行う必要があることに注意してください</li>
+    <li>その他</li>
+</ul>
+<p>このコースでは、これらの接続を実際に作成することはありません。ただし、プロセスは簡単で十分に文書化されています。</p>
+</div>
+</div>
+<div style="display: none;">
+    <div>
+        <textarea id="step-3-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+        <textarea id="step-3-test-backup" style="display:none;"></textarea>
+    </div>
+
+
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-3-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-3-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-3-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-3-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-3-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-3-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-3-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-3-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-3-sql-ta');
+                    ta.select();
+
+
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-3-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-4-wrapper" style="width:800px;"><div id="step-4-instruction" style="margin-bottom:1em">
+
+    <h2>
+        <img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon">
+        パーソナルアクセス トークン（PATs）</h2>
+    <div class="instructions-div">
+        <p><span style="color:red;">注意：CLIやAPIを使用してDatabricks SQLに接続するには、パーソナルアクセス トークン（PAT）が必要です。Databricksの管理者には、PATを作成できる権限が必要です。</span></p>
+        <p>CLIおよびAPIは、外部からDatabricks SQLを制御するための方法です。このレッスンのこの部分では、CLIやAPIを使用するために必要なPATの作成方法を示します。<span style="color:red;">このトークンは秘密にしておかなければなりません。これはユーザー名とパスワードと同じであり、そのユーザーにDatabricksであなたの名前で操作する権限を与えます</span>。PATを作成するには：</p>
+        <ol>
+            <li>ページの右上隅にあるユーザー名をクリックし、「ユーザー設定」をクリックします</li>
+            <li>設定の下にある「開発者」タブをクリックします</li>
+            <li>アクセス トークンセクションで「管理」をクリックします</li>
+            <li>"+ 新しいトークンを生成"をクリックします</li>
+            <li>コメントセクションにトークンの理由を記入します</li>
+            <li>トークンの有効期間を必要に応じて変更します（空白のままにすると、トークンは期限切れになりません）</li>
+
+
+            <li>「生成」をクリックします</li>
+        </ol>
+        <p>トークンが作成されました。これがトークンにアクセスできる唯一の機会ですので、今すぐコピーして安全な場所に保存してください。OKをクリックすると、トークンはもう一度表示できなくなります。</p>
+        <ol start="8">
+            <li>「コピー」アイコン（紙が2枚重なっているようなアイコン）をクリックします</li>
+            <li>トークンを安全な場所に保存します（Databricks内では将来トークンを表示することはできません）</li>
+            <li>ダイアログを閉じるためにOKをクリックします</li>
+        </ol>
+        <p>APIやCLIの使用はこのクラスの範囲外ですが、Databricks SQL APIに関する詳細情報は<a href="https://docs.databricks.com/en/sql/admin/sql-execution-tutorial.html" target="_blank">こちら</a>で、Databricks CLIに関する詳細情報は<a href="https://docs.databricks.com/dev-tools/databricks-sql-cli.html" target="_blank">こちら</a>でご確認いただけます。</p>
+        </div>
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-4-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-4-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-4-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-4-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-4-test-btn" type="button"  onclick="
+
+
+                    let ta = document.getElementById('step-4-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-4-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-4-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-4-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-4-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-4-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+
+
+        <div id="step-4-after_codebox_instruction" style="margin-bottom:1em"></div></div><script src="script.js"></script>
+        <hr style="margin-top:8em">
+        <div>
+            <div>&copy; 2024 Databricks, Inc. All rights reserved.</div>
+            <div>Apache、Apache Spark、Spark および Spark ロゴは <a href="https://www.apache.org/">Apache Software Foundation</a> の商標です。</div>
+            <div style="margin-top:1em">
+                <div style="float:left">
+                    <a href="https://databricks.com/privacy-policy">プライバシーポリシー</a> | 
+                    <a href="https://databricks.com/terms-of-use">利用規約</a> | <a href="https://help.databricks.com/">サポート</a>
+                </div>
+                <div style="float:right">2.1.1</div>
+            </div>               
+        </div></div></body></html>
+

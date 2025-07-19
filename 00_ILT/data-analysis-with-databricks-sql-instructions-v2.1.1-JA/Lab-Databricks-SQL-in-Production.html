@@ -1,0 +1,388 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Lab - Databricks SQL in Production</title>
+        <link href='https://fonts.googleapis.com/css?family=DM%20Sans' rel='stylesheet' type='text/css'>
+        <style>
+        body {background-color: #f9f7f4;font-family: 'DM Sans', sans-serif;}
+        h2 {color: #ff3621;}
+        h3 {margin-left: 5px}
+        ol {margin-left: 20px; font-family:sans-serif; color: #0873FF;} //E81334 618794
+        ol li {margin-bottom:5px;}
+        td {padding: 5px;border-bottom: 1px solid #ededed;}
+        tr.selected td {color: white;background-color: red;}
+        .monofont {font-family: monospace; font-size: 14px}
+        .content {max-width: 800px; margin: auto; padding-left: 50px}
+        .image-icon-inline {display:inline; vertical-align: middle; margin: 0 10px 0 10px}
+        .instructions-div {padding-left: 5px}
+        </style>
+            </head>
+            <body onload="loaded()">
+                <div class="content">
+                    <img src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/db-academy-rgb-1200px_no_bg.png" 
+                        alt="Databricks Learning" 
+                        style="width: 600px; margin-left: 100px; margin-right: 100px">
+                <hr>
+                <h1>ラボ - Databricks SQL の本番運用</h1><div id="inputs">
+                    <p>以下の2つのフィールドは、このコースで使用されるクエリをカスタマイズするために使用されます。</p>
+                    <p><span style="color:red">注意:</span> 以下の2つのフィールドにカタログ名とユーザ名が含まれていない場合、Cookie が有効になっていないか、<a href="Demo-Setting-Up-a-Catalog-and-Schema.html" target="_blank">こちら</a>の手順に従う必要があります。</p>
+                    <table>
+                        <tr>
+                            <td style="white-space:nowrap">カタログ名:&nbsp;</td>
+                            <td><input id="catalog_name" type="text" style="width:40em" onchange="update();"></td>
+                        </tr><tr>
+                            <td style="white-space:nowrap">ユーザ名:&nbsp;</td>
+                            <td><input id="username" type="text" style="width:40em" onchange="update();"></td>
+                        </tr>
+                    </table>
+                </div><hr>
+<div id="step-1-wrapper" style="width:800px;"><div id="step-1-instruction" style="margin-bottom:1em">    
+
+    <h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+    レッスンの目標</h2>
+    <div class="instructions-div">
+    <p>このレッスンの最後には、次のことができるようになります：</p>
+    <ul>
+        <li>リフレッシュスケジュールを持つダッシュボードを作成する。</li>
+        <li>クエリアラートを作成する。</li>
+
+    </ul></div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-1-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-1-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-1-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-1-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-1-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-1-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-1-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-1-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-1-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-1-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-2-wrapper" style="width:800px;"><div id="step-2-instruction" style="margin-bottom:1em">
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+クエリの更新</h2>
+    <div class="instructions-div">
+    <p>クエリを更新スケジュールに設定するのは簡単な手順です。このラボのこの部分では、以前のコースで作業したクエリを使用します。このクエリは、新しいデータを含む新しいJSONファイルを取り込むように設計されています。新しいデータを取り込むたびにクエリを手動で実行しなければ、クエリの実行間にデータが古くなる可能性があります。更新スケジュールを構成することで、<span class="monofont">sales_stream</span> テーブルに自動的に新しいデータを取り込むことができます。</p>
+    <p>以下を完了してください:</p>
+    <ol>
+        <li>サイドバーメニューからSQLエディタを開きます。</li>
+        <li>既に開いているクエリタブの隣にある「+」シンボルをクリックして新しいクエリを作成します。</li>
+        <li>以下に表示されるクエリを貼り付け、すべての 'FILL_IN' プロンプトを編集してコードを完成させます。</li>
+    </ol>
+    <p>注意: コードはそのままでは実行されません。 'FILL_IN' プロンプトを完了する必要があります。</p>
+    <ol start="4">
+        <li>クエリを「Ingest Sales Stream」と名前を変更します。</li>
+        <li>右上隅の「保存」をクリックしてクエリを保存します。</li>
+        <li>「スケジュール」ドロップダウンメニューから「スケジュールの追加」を選択します。</li>
+        <li>スケジュールを毎週金曜日に設定します。</li>
+        <li>リフレッシュスケジュールを設定するには、「作成」をクリックします。</li>
+    </ol>
+    </div></div>
+        <div style="">
+            <div>
+                <textarea id="step-2-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="20">DROP TABLE IF EXISTS sales_stream;
+CREATE TABLE sales_stream (5minutes STRING, 
+                                         clicked_items ARRAY&lt;ARRAY&lt;STRING&gt;&gt;, 
+                                         customer_id STRING, 
+                                         customer_name STRING, 
+                                         datetime STRING, 
+                                         hour BIGINT, 
+                                         minute BIGINT, 
+                                         number_of_line_items STRING, 
+                                         order_datetime STRING, 
+                                         order_number BIGINT, 
+                                         ordered_products ARRAY&lt;ARRAY&lt;STRING&gt;&gt;, 
+                                         sales_person DOUBLE, 
+                                         ship_to_address STRING
+);
+COPY INTO FILL_IN 
+    FROM 'wasbs://courseware@dbacademy.blob.core.windows.net/data-analysis-with-databricks/v03/retail-org/sales_stream/sales_stream_json'
+    FILEFORMAT = FILL_IN;
+SELECT * FROM sales_stream ORDER BY customer_id;</textarea>
+                <textarea id="step-2-test-backup" style="display:none;">DROP TABLE IF EXISTS sales_stream;
+CREATE TABLE sales_stream (5minutes STRING, 
+                                         clicked_items ARRAY&lt;ARRAY&lt;STRING&gt;&gt;, 
+                                         customer_id STRING, 
+                                         customer_name STRING, 
+                                         datetime STRING, 
+                                         hour BIGINT, 
+                                         minute BIGINT, 
+                                         number_of_line_items STRING, 
+                                         order_datetime STRING, 
+                                         order_number BIGINT, 
+                                         ordered_products ARRAY&lt;ARRAY&lt;STRING&gt;&gt;, 
+                                         sales_person DOUBLE, 
+                                         ship_to_address STRING
+);
+COPY INTO FILL_IN 
+    FROM 'wasbs://courseware@dbacademy.blob.core.windows.net/data-analysis-with-databricks/v03/retail-org/sales_stream/sales_stream_json'
+    FILEFORMAT = FILL_IN;
+SELECT * FROM sales_stream ORDER BY customer_id;</textarea>
+            </div>
+            <div style="text-align:right;  margin-top:5px">
+                <button id="step-2-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-2-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-2-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-2-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-2-sql-ta" style="width:100%; padding:10px" rows="20">DROP TABLE IF EXISTS sales_stream;
+CREATE TABLE sales_stream (5minutes STRING, 
+
+                                         clicked_items ARRAY<ARRAY<STRING>>, 
+                                         customer_id STRING, 
+                                         customer_name STRING, 
+                                         datetime STRING, 
+                                         hour BIGINT, 
+                                         minute BIGINT, 
+                                         number_of_line_items STRING, 
+                                         order_datetime STRING, 
+                                         order_number BIGINT, 
+                                         ordered_products ARRAY<ARRAY<STRING>>, 
+                                         sales_person DOUBLE, 
+                                         ship_to_address STRING
+);
+COPY INTO sales_stream 
+    FROM 'wasbs://courseware@dbacademy.blob.core.windows.net/data-analysis-with-databricks/v03/retail-org/sales_stream/sales_stream_json'
+    FILEFORMAT = JSON;
+SELECT * FROM sales_stream ORDER BY customer_id;</textarea>
+                <textarea id="step-2-sql-backup" style="display:none;">DROP TABLE IF EXISTS sales_stream;
+CREATE TABLE sales_stream (5minutes STRING, 
+                                         clicked_items ARRAY<ARRAY<STRING>>,
+                                         customer_id STRING, 
+                                         customer_name STRING, 
+                                         datetime STRING, 
+                                         hour BIGINT, 
+                                         minute BIGINT, 
+                                         number_of_line_items STRING, 
+                                         order_datetime STRING, 
+                                         order_number BIGINT, 
+                                         ordered_products ARRAY<ARRAY<STRING>>, 
+                                         sales_person DOUBLE, 
+                                         ship_to_address STRING
+);
+COPY INTO sales_stream 
+    FROM 'wasbs://courseware@dbacademy.blob.core.windows.net/data-analysis-with-databricks/v03/retail-org/sales_stream/sales_stream_json'
+    FILEFORMAT = JSON;
+SELECT * FROM sales_stream ORDER BY customer_id;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-2-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-2-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-3-wrapper" style="width:800px;"><div id="step-3-instruction" style="margin-bottom:1em">
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+アラート</h2>
+    <div class="instructions-div">    
+    <p>更新スケジュールを設定したので、売上から生じる収入が一定の閾値を超えた場合に通知するアラートを設定しましょう。</p>
+    <p>このラボの目標は、<span class="monofont">sales_stream</span> テーブルの全ての売上から収入の合計を計算し、その収入が $1,000,000 を超えた場合に通知するアラートを設定するクエリを生成することです。</p>
+    <p><span class="monofont">sales_stream</span> テーブルには <span class="monofont">ordered_products</span> という列があり、それには製品の売値が含まれる追加の配列が含まれています。この値は各配列の3番目にあります。クエリの最初のステップは、各製品情報の配列を結果の各行として返すことです。これを行うのが <span class="monofont">explode()</span> 関数です。これらの配列の3番目の要素を取得したいので、CTE を使用してブラケット演算子 (<span class="monofont">[]</span>) を使用して3番目の要素を選択します。その後、<span class="monofont">sum()</span> 関数を使用して売上品のコストの合計を計算します。その後、合計が 1000000 を超えた場合に通知するアラートを設定します。</p>
+    <p>以下を完了してください：</p>
+    <ol>
+        <li>以下のクエリを確認し、必要に応じて「FILL_IN」指示を正しい値で置き換えます</li>
+        <li>Databricks の SQL エディタを使用してクエリを実行します。</li>
+        <li>クエリを「Total Sales Dollars」として保存します。</li>
+        <li>サイドバーメニューの「アラート」に移動します。</li>
+        <li>「アラートの作成」をクリックします。</li>
+        <li>アラートの名前を「Lab Alert」とし、ドロップダウンから「Total Sales Dollars」クエリを選択します。</li>
+        <li>トリガー条件の「値の列」をtotal_salesに変更し、「閾値の値」を1000000に設定します。</li>
+        <li>「アラートの作成」をクリックします。</li>
+        <li>画面右側にスケジュールを追加するには、「スケジュールの追加」をクリックし、このアラートを毎時チェックするようにスケジュールします。</li>
+    </ol>
+    </div></div>
+        <div style="">
+            <div>
+                <textarea id="step-3-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="4">WITH all_sold_products AS
+    (SELECT explode(ordered_products) AS products FROM sales_stream)
+SELECT sum(products[3]) AS total_sales FROM FILL_IN;</textarea>
+                <textarea id="step-3-test-backup" style="display:none;">WITH all_sold_products AS
+    (SELECT explode(ordered_products) AS products FROM sales_stream)
+SELECT sum(products[3]) AS total_sales FROM FILL_IN;</textarea>
+            </div>
+            <div style="text-align:right;  margin-top:5px">
+                <button id="step-3-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-3-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-3-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-3-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-3-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-3-sql-ta" style="width:100%; padding:10px" rows="4">WITH all_sold_products AS
+    (SELECT explode(ordered_products) AS products FROM sales_stream)
+SELECT sum(products[3]) AS total_sales FROM all_sold_products;</textarea>
+                <textarea id="step-3-sql-backup" style="display:none;">WITH all_sold_products AS
+    (SELECT explode(ordered_products) AS products FROM sales_stream)
+SELECT sum(products[3]) AS total_sales FROM all_sold_products;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-3-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-3-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-3-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-4-wrapper" style="width:800px;"><div id="step-4-instruction" style="margin-bottom:1em">
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+クエリ/ダッシュボードの共有</h2>
+    <div class="instructions-div">
+    <p>クエリとダッシュボードの共有プロセスは同じですので、このラボではそのタスクの達成方法を理解しているかを確認し、ダッシュボードのみを対象とします。</p>
+    <p>このタスクでは、他のすべてのユーザーとダッシュボードを共有する必要があります。</p>
+    <ol>
+        <li>サイドバーメニューからダッシュボードを選択します。</li>
+        <li>リストから共有したいダッシュボードを選択します。</li>
+        <li>右上隅から「共有」を選択します。</li>
+        <li>「複数のユーザーまたはグループを追加するには入力」と書かれたドロップダウンボックスを選択します。提案が表示されます。 「すべてのユーザー」を選択します。</li>
+        <li>「管理できる」のオプションを「編集できる」、「実行できる」、「表示できる」に切り替えるか、「管理できる」のままにします。</li>
+        <li>メインの共有ダイアログボックスに戻るには、「追加」をクリックします。</li>
+    </ol>
+<p>注意：ユーザー/グループ選択画面で「編集できる」「管理できる」を選択した場合でも、「すべてのユーザー」の横にあるドロップダウンに表示される権限は「実行できる」「表示できる」のみです。他のユーザーに他の権限を割り当てることも可能ですが、その場合は「資格情報」を「ビューアーとして実行」に変更する必要がありますが、この演習では必要ありません。</p>
+<ol start="7">
+    <li>資格情報を「所有者として実行」に設定したままにしてください。</li>
+    <li>右上隅の「X」をクリックして共有ダイアログを閉じます。</li>
+    <li>個々のユーザーまたはグループの権限を削除するには、「共有」オプションを再度クリックし、「すべてのユーザー」の隣のドロップダウンから「削除」を選択します。</li>
+</ol>
+</div>
+</div>
+<div style="display: none;">
+    <div>
+        <textarea id="step-4-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+        <textarea id="step-4-test-backup" style="display:none;"></textarea>
+    </div>
+    <div style="text-align:right; display: none; margin-top:5px">
+        <button id="step-4-test-show-btn" type="button" style="display:none;" 
+                onclick="document.getElementById('step-4-sql').style.display = 'block';">回答を表示</button>
+        <button id="step-4-test-btn" type="button"  onclick="
+            let ta = document.getElementById('step-4-test-ta');
+            ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-4-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-4-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-4-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-4-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-4-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-4-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-5-wrapper" style="width:800px;"><div id="step-5-instruction" style="margin-bottom:1em">
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+ダッシュボードの更新</h2>
+<div class="instructions-div">
+<p>ダッシュボードを最新の状態に保つためにリフレッシュスケジュールを使用することは良い習慣です。リフレッシュスケジュールは1分ごとから1年ごとに設定することができます。さらに、ダッシュボードのリフレッシュスケジュールに購読者を追加すると、スケジュールが実行されると自動的にユーザーまたはチャンネルに更新されたダッシュボードが送信されます。</p>
+<p>この演習では、既存のダッシュボードに1分ごとのリフレッシュスケジュールを設定する必要があります。これは以下の手順を完了することで達成できます：</p>
+<ol>
+    <li>選択したダッシュボードで、右上隅の「スケジュール」をクリックします。</li>
+    <li>次に、ドロップダウンから「スケジュールの追加」を選択します。</li>
+    <li>展開されたダイアログで、スケジュールを1分ごとに設定します。</li>
+    <li>必要に応じてタイムゾーンを調整します。</li>
+    <li>「詳細設定」を展開します。ここでは、スケジュールの名前を変更したり、ダッシュボードをサービスするクエリを実行するために使用するSQL Warehouseを手動で選択することができます。</li>
+    <li>「スケジュールの追加」ドロップダウンで、「設定」の隣にある「購読者」を選択します。</li>
+</ol>
+<p>ダッシュボードのスナップショットを購読者に送信するかどうかを切り替えることができ、購読者への更新のためのデフォルトのメール件名も含めることができます。</p>
+<ol start="7">
+    <li>このリフレッシュスケジュールの購読者リストにユーザー、グループ、または宛先（Slackチャンネルなど）を追加するには、「ユーザーまたは宛先を追加するための検索」フィールドを使用します。このラボを完了するためにデモ環境を使用している場合は、誰も追加できない場合があります。</li>
+    <li>完了したら、「作成」をクリックしてスケジュールを設定します。</li>
+    <li>スケジュールのドロップダウンから、ケバブメニューをクリックして、スケジュールの編集、複製、スケジュールの権限の編集、一時停止、またはリフレッシュスケジュールに購読することができます。また、このドロップダウンからリフレッシュスケジュールを削除することもできます。</li>
+</ol>
+<p><span style="color:red">警告：ダッシュボードの更新間隔がSQL Warehouseの「自動停止」パラメータよりも短い場合、Warehouseは無期限に実行され、プラットフォームコストに影響します。</span></p>
+
+<p>ダッシュボードのスケジュールとサブスクリプションを使用すると、ダッシュボードデータが定期的に更新され、重要なステークホルダーに緊急の更新情報が提供されます。</p>
+    </div>
+
+
+</div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-5-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-5-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-5-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-5-sql').style.display = 'block';">答えを表示</button>
+                <button id="step-5-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-5-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-5-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-5-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-5-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-5-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-5-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-5-after_codebox_instruction" style="margin-bottom:1em"></div></div><script src="script.js"></script>
+        <hr style="margin-top:8em">
+        <div>
+            <div>&copy; 2024 Databricks, Inc. All rights reserved.</div>
+            <div>Apache、Apache Spark、SparkおよびSparkロゴは<a href="https://www.apache.org/">Apache Software Foundation</a>の商標です。</div>
+            <div style="margin-top:1em">
+                <div style="float:left">
+                    <a href="https://databricks.com/privacy-policy">プライバシーポリシー</a> | 
+                    <a href="https://databricks.com/terms-of-use">利用規約</a> | <a href="https://help.databricks.com/">サポート</a>
+                </div>
+                <div style="float:right">2.1.1</div>
+            </div>               
+        </div></div></body></html>

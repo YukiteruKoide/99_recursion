@@ -1,0 +1,331 @@
+
+        <!DOCTYPE html>
+        <html lang="ja">
+            <head>
+                <meta charset="utf-8">
+                <title>Demo - Data Importing</title>
+                <link href='https://fonts.googleapis.com/css?family=DM%20Sans' rel='stylesheet' type='text/css'>
+                <style>
+                body {background-color: #f9f7f4;font-family: 'DM Sans', sans-serif;}
+                h2 {color: #ff3621;}
+                h3 {margin-left: 5px}
+                ol {margin-left: 20px; font-family:sans-serif; color: #0873FF;} //E81334 618794
+                ol li {margin-bottom:5px;}
+                td {padding: 5px;border-bottom: 1px solid #ededed;}
+                tr.selected td {color: white;background-color: red;}
+                .monofont {font-family: monospace; font-size: 14px}
+                .content {max-width: 800px; margin: auto; padding-left: 50px}
+                .image-icon-inline {display:inline; vertical-align: middle; margin: 0 10px 0 10px}
+                .instructions-div {padding-left: 5px}
+            </style>
+            </head>
+            <body onload="loaded()">
+                <div class="content">
+                    <img src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/db-academy-rgb-1200px_no_bg.png" 
+                        alt="Databricks Learning" 
+                        style="width: 600px; margin-left: 100px; margin-right: 100px">
+                <hr>
+                <h1>デモ - データのインポート</h1><div id="inputs">
+                    <p>以下の2つのフィールドは、このコースで使用されるクエリをカスタマイズするために使用されます。</p>
+                    <p><span style="color:red">注意:</span> 以下の2つのフィールドにカタログ名とユーザー名が含まれていない場合は、Cookieが有効になっていないか、<a href="Demo-Setting-Up-a-Catalog-and-Schema.html" target="_blank">こちら</a>の手順に従う必要があります。</p>
+                    <table>
+                        <tr>
+                            <td style="white-space:nowrap">カタログ名:&nbsp;</td>
+                            <td><input id="catalog_name" type="text" style="width:40em" onchange="update();"></td>
+                        </tr><tr>
+                            <td style="white-space:nowrap">ユーザー名:&nbsp;</td>
+                            <td><input id="username" type="text" style="width:40em" onchange="update();"></td>
+                        </tr>
+                    </table>
+                </div><hr>
+
+
+<div id="step-1-wrapper" style="width:800px;"><div id="step-1-instruction" style="margin-bottom:1em">    
+
+    <h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon">
+    レッスンの目標</h2>
+    <div class="instructions-div">
+    <p>このレッスンの終わりに、以下のことができるようになります:</p>
+    <ul>
+        <li>小規模なテキストファイル（ルックアップテーブルやクイックデータ統合など）をインポートするためのセキュアなソリューションとして、small-fileアップロードを特定します。</li>
+        <li>小規模なテキストファイルをDeltaテーブルとしてセキュアにアップロードするために、Databricks SQLでsmall-fileアップロードを使用します。</li>
+        <li>カタログエクスプローラーを使用してテーブルにメタデータを追加します。</li>
+        <li>Databricks SQLを使用してオブジェクトストレージからインポートします。</li>
+    </ul></div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-1-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-1-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+
+
+                <button id="step-1-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-1-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-1-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-1-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-1-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-1-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-1-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+
+
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-1-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-2-wrapper" style="width:800px;"><div id="step-2-instruction" style="margin-bottom:1em">
+
+    <h2>
+        <img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon">
+        データファイルのアップロード</h2>
+    <div class="instructions-div">
+        <p>このレッスンでは、Databricks SQLにデータを取り込む2つの方法を使用します。このレッスンのこの部分では、データファイルを直接アップロードします。Databricksにデータファイルを直接アップロードすることが有益なケースは多くあります。その場合、DatabricksはSmall File Uploadを提供しており、CSV、TSV、JSONなどのファイルタイプのサブセットをアップロードできます。現在、CSVを使用してクイック分析やルックアップテーブルなどの単純なテーブルをアップロードしています。このデモのこの部分では、この機能の使用方法を紹介します。まず、アップロードできるデータファイルが必要です。</p>
+        <ol start="1">
+            <li><a href="https://files.training.databricks.com/courses/data-analysis-with-databricks-sql/data.csv">こちら</a>をクリックして.csvファイルをダウンロードします</li>
+            <li>サイドバーメニューで「新規作成」→「ファイルのアップロード」をクリックします</li>
+        </ol>
+        <p>このシンプルなインターフェースでは、ファイルを直接ドロップするか、ローカルコンピュータのファイルシステムからファイルを参照できます。1度にアップロードできるファイルは10個までで、合計ファイルサイズは2 GBを超えることはできません。</p>
+        <ol start="3">
+            <li>データ.csvファイル（ステップ1でダウンロードしたもの）をページにドラッグアンドドロップします（または「参照」をクリックしてファイルを選択します）</li>
+        </ol>
+        <p>表示されるページの機能に注意してください:</p>
+
+
+<ul>
+            <li>テーブルの場所を選択できるトップエリア。</li>
+            <li>区切り文字、エスケープ文字などの「高度な属性」を選択できるエリア。</li>
+            <li>データのプレビューが表示される下部エリアで、列に変更を加えることができます。</li>
+        </ul>
+        <p>以下を完了してください：</p>
+        <ol start="4">
+            <li>カタログ名とスキーマ「dawd_v2」を選択します。</li>
+            <li>テーブル名はファイル名（拡張子を除く）にデフォルトで設定されます。必要に応じてテーブル名を「data」に変更します。</li>
+            <li>ページの下部にある「テーブルを作成」をクリックします。</li>
+        </ol>
+        <p>テーブルの作成には数秒かかる場合があります。その後、カタログエクスプローラに移動し、新しいテーブルが選択されます。</p>
+    </div>
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-2-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-2-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+
+
+                <button id="step-2-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-2-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-2-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-2-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-2-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-2-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-2-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+
+
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-2-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-3-wrapper" style="width:800px;"><div id="step-3-instruction" style="margin-bottom:1em">
+
+    <h2>
+        <img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon">
+        カタログエクスプローラ</h2>
+    <div class="instructions-div">
+        <p>サイドバーメニューの「カタログ」をクリックするといつでもカタログエクスプローラにアクセスできます。</p>
+        <p>カタログエクスプローラの機能については以下の点に注意してください:</p>
+        <ul>
+            <li>表示権限があるカタログ、スキーマ、およびテーブルを表示できます</li>
+        </ul>
+        <ol>
+            <li>カタログ名をクリックします</li>
+            <li>スキーマ「dawd_v2」を選択します</li>
+        </ol>
+        <p>このスキーマに関する情報を表示できます。情報にはタイプ（スキーマ）、所有者（ユーザー名）、およびスキーマ内のテーブルのリストが含まれます。</p>
+
+
+<ol start="3">
+            <li>私たちが作成したテーブル「data」をクリックします。</li>
+        </ol>
+        <p>テーブルに関する追加情報があります。</p>
+        <ul>
+            <li>データソースの形式はDeltaです</li>
+            <li>現在のコメントは、「ファイルアップロードUIによって作成されました」となっています</li>
+            <li>テーブル内の各列の列名、データ型、およびコメント</li>
+            <li>サンプルデータ</li>
+            <li>詳細タブには追加情報が表示されます</li>
+            <li>権限タブにはテーブルに現在付与されている権限が表示されます</li>
+            <li>最後に、履歴タブにはテーブルで実行されたアクションが表示されます。これはDeltaテーブルであるため利用可能な機能です。この機能については、後のコースで詳しく説明します。</li>
+        </ul>
+        <p>テーブルを作成したため、テーブルの所有者であり、テーブルに権限を付与または取り消すことができます。SQLを使用して権限を変更できますが、Catalog Explorerを使用するとUIを介してさまざまな権限を付与および取り消すことができます。</p>
+        <ol start="4">
+            <li>権限をクリックします</li>
+        </ol>
+        <p>テーブルの所有者としてすべての権限が付与されていることに注意してください</p>
+        <ol start="5">
+            <li>Grantをクリックします</li>
+
+
+            <li>すべての権限の隣にあるチェックボックスを選択します</li>
+            <li>「Principals」ボックス内をクリックしてユーザーと/またはグループを追加します</li>
+            <li>「account users」と入力して選択します</li>
+        </ol>
+        <p>「account users」グループにこのテーブルを選択および変更する権限を付与するには、カタログとスキーマに対してそれぞれUSE CATALOGおよびUSE SCHEMAの権限も必要です。それを行いましょう。</p>
+        <ol start="9">
+            <li>Grant をクリックします</li>
+            <li>カタログ名をクリックします</li>
+            <li>Permissions をクリックします</li>
+            <li>Grant をクリックします</li>
+            <li>USE CATALOG の隣にあるチェックボックスを選択します</li>
+            <li>「Principals」ボックス内をクリックしてユーザーと/またはグループを追加します</li>
+            <li>「account users」と入力して選択します</li>
+            <li>Grant をクリックします</li>
+            <li>「dawd_v2」というスキーマ名をクリックし、同じ操作を実行して account users に USE SCHEMA を付与します</li>
+        </ol>
+        <p>データテーブルに account users に付与した権限を取り消しましょう。</p>
+        <ol start="18">
+            <li>Tables タブをクリックし、「data」をクリックします</li>
+            <li>Permissions タブをクリックします</li>
+
+
+            <li>アカウントユーザーのチェックボックスを選択します</li>
+            <li>取り消しをクリックします</li>
+            <li>表示される警告で取り消しをクリックします</li>
+        </ol>
+    </div>
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-3-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-3-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-3-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-3-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-3-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-3-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+
+
+        </div>
+          
+        <div id="step-3-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-3-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-3-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-3-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-3-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-3-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-4-wrapper" style="width:800px;"><div id="step-4-instruction" style="margin-bottom:1em">
+
+    <h2>
+        <img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon">
+
+
+        <h2>コース用の新しいテーブルを作成する</h2>
+    <div class="instructions-div">
+        <p>アップロードしたdata.csvファイルには、このコースで使用する3つの異なるテーブルのデータが含まれています。 3つの個々のテーブルを作成するクエリを実行する必要があります。</p>
+        <p>以下を完了してください：</p>
+        <ol start="1">
+            <li>サイドバーメニューで[新規]→[クエリ]をクリックして新しいクエリを開始します</li>
+            <li>以下のクエリをクエリエディタにコピーして貼り付け、[実行]をクリックします。</li>
+        </ol>
+    </div>
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-4-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-4-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-4-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-4-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-4-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-4-test-ta');
+
+
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-4-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-4-sql-ta" style="width:100%; padding:10px" rows="7">CREATE OR REPLACE TABLE customers AS
+  SELECT customer_id2 AS customer_id, tax_id, tax_code, customer_name3 AS customer_name, state, city, postcode, street, number, unit, region, district, lon, lat, ship_to_address, valid_from, valid_to, units_purchased, loyalty_segment FROM data WHERE table_name1 IS NULL AND table_name IS NULL;
+CREATE OR REPLACE TABLE sales AS
+  SELECT customer_id, customer_name, product_name, order_date, product_category, product, total_price FROM data WHERE table_name IS NOT NULL;
+CREATE OR REPLACE TABLE gym_logs AS
+  SELECT first_timestamp, gym, last_timestamp, mac FROM data WHERE table_name1 IS NOT NULL;</textarea>
+                <textarea id="step-4-sql-backup" style="display:none;">CREATE OR REPLACE TABLE customers AS
+  SELECT customer_id2 AS customer_id, tax_id, tax_code, customer_name3 AS customer_name, state, city, postcode, street, number, unit, region, district, lon, lat, ship_to_address, valid_from, valid_to, units_purchased, loyalty_segment FROM data WHERE table_name1 IS NULL AND table_name IS NULL;
+CREATE OR REPLACE TABLE sales AS
+  SELECT customer_id, customer_name, product_name, order_date, product_category, product, total_price FROM data WHERE table_name IS NOT NULL;
+CREATE OR REPLACE TABLE gym_logs AS
+  SELECT first_timestamp, gym, last_timestamp, mac FROM data WHERE table_name1 IS NOT NULL;</textarea>
+
+
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-4-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-4-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-4-after_codebox_instruction" style="margin-bottom:1em"></div></div><script src="script.js"></script>
+        <hr style="margin-top:8em">
+        <div>
+            <div>&copy; 2024 Databricks, Inc. All rights reserved.</div>
+            <div>Apache、Apache Spark、SparkおよびSparkロゴは<a href="https://www.apache.org/">Apache Software Foundation</a>の商標です。</div>
+            <div style="margin-top:1em">
+                <div style="float:left">
+                    <a href="https://databricks.com/privacy-policy">プライバシーポリシー</a> | 
+                    <a href="https://databricks.com/terms-of-use">利用規約</a> | <a href="https://help.databricks.com/">サポート</a>
+                </div>
+                <div style="float:right">2.1.1</div>
+
+
+            </div>               
+        </div></div></body></html>
+

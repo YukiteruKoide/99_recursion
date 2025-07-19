@@ -1,0 +1,281 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <title>Lab - データビジュアライゼーション</title>
+        <link href='https://fonts.googleapis.com/css?family=DM%20Sans' rel='stylesheet' type='text/css'>
+        <style>
+        body {background-color: #f9f7f4;font-family: 'DM Sans', sans-serif;}
+        h2 {color: #ff3621;}
+        h3 {margin-left: 5px}
+        ol {margin-left: 20px; font-family:sans-serif; color: #0873FF;} //E81334 618794
+        ol li {margin-bottom:5px;}
+        td {padding: 5px;border-bottom: 1px solid #ededed;}
+        tr.selected td {color: white;background-color: red;}
+        .monofont {font-family: monospace; font-size: 14px}
+        .content {max-width: 800px; margin: auto; padding-left: 50px}
+        .image-icon-inline {display:inline; vertical-align: middle; margin: 0 10px 0 10px}
+        .instructions-div {padding-left: 5px}
+    </style>
+            </head>
+            <body onload="loaded()">
+                <div class="content">
+                    <img src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/db-academy-rgb-1200px_no_bg.png" 
+                        alt="Databricks Learning" 
+                        style="width: 600px; margin-left: 100px; margin-right: 100px">
+                <hr>
+                <h1>Lab - データ可視化</h1><div id="inputs">
+                    <p>以下の2つのフィールドは、このコースで使用されるクエリをカスタマイズするために使用されます。</p>
+                    <p><span style="color:red">注意:</span> 以下の2つのフィールドにカタログ名とユーザー名が含まれていない場合、Cookie が有効になっていないか、<a href="Demo-Setting-Up-a-Catalog-and-Schema.html" target="_blank">こちら</a>の手順に従う必要があります。</p>
+                    <table>
+                        <tr>
+                            <td style="white-space:nowrap">カタログ名:&nbsp;</td>
+                            <td><input id="catalog_name" type="text" style="width:40em" onchange="update();"></td>
+                        </tr><tr>
+                            <td style="white-space:nowrap">ユーザー名:&nbsp;</td>
+                            <td><input id="username" type="text" style="width:40em" onchange="update();"></td>
+                        </tr>
+                    </table>
+                </div><hr>
+<div id="step-1-wrapper" style="width:800px;"><div id="step-1-instruction" style="margin-bottom:1em">    
+
+    <h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+    レッスンの目標</h2>
+    <div class="instructions-div">
+    <p>このレッスンの終わりに、以下のことができるようになります:</p>
+    <ul>
+    <li>Databricks SQLを使用して追加のカスタマイズされたビジュアライゼーションを作成する。</li>
+    </ul></div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-1-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-1-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-1-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-1-sql').style.display = 'block';">答えを表示</button>
+                <button id="step-1-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-1-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-1-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-1-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-1-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+<div id="step-1-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-2-wrapper" style="width:800px;"><div id="step-2-instruction" style="margin-bottom:1em">    
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+このレッスンのためのテーブルを作成しデータをロードする</h2>
+    <div class="instructions-div">
+    <p>以下を完了してください:</p>
+    <ol>
+        <li>クエリエディター上部のドロップダウンでカタログとスキーマ"dawd_v2"が選択されていることを確認します</li>
+        <li>以下のクエリを実行します</li>
+    </ol>
+    </div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-2-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-2-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-2-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-2-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-2-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-2-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-2-sql-ta" style="width:100%; padding:10px" rows="11">DROP TABLE IF EXISTS sales;
+CREATE TABLE sales AS SELECT * FROM delta.`wasbs://courseware@dbacademy.blob.core.windows.net/data-analysis-with-databricks/v03/retail-org/sales/sales_delta`;
+DROP TABLE IF EXISTS customers;
+CREATE TABLE customers AS 
+    SELECT * FROM delta.`wasbs://courseware@dbacademy.blob.core.windows.net/data-analysis-with-databricks/v03/retail-org/customers/customers_delta`;
+SELECT * FROM customers;
+DROP TABLE IF EXISTS sales_orders;
+CREATE TABLE sales_orders AS
+    SELECT * FROM delta.`wasbs://courseware@dbacademy.blob.core.windows.net/data-analysis-with-databricks/v03/retail-org/sales_orders/sales_orders_delta`;
+SELECT * FROM sales_orders;</textarea>
+                <textarea id="step-2-sql-backup" style="display:none;">DROP TABLE IF EXISTS sales;
+CREATE TABLE sales AS SELECT * FROM delta.`wasbs://courseware@dbacademy.blob.core.windows.net/data-analysis-with-databricks/v03/retail-org/sales/sales_delta`;
+DROP TABLE IF EXISTS customers;
+CREATE TABLE customers AS 
+    SELECT * FROM delta.`wasbs://courseware@dbacademy.blob.core.windows.net/data-analysis-with-databricks/v03/retail-org/customers/customers_delta`;
+SELECT * FROM customers;
+DROP TABLE IF EXISTS sales_orders;
+CREATE TABLE sales_orders AS 
+    SELECT * FROM delta.`wasbs://courseware@dbacademy.blob.core.windows.net/data-analysis-with-databricks/v03/retail-org/sales_orders/sales_orders_delta`;
+SELECT * FROM sales_orders;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-2-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-2-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-3-wrapper" style="width:800px;"><div id="step-3-instruction" style="margin-bottom:1em">
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+ボックスプロットを作成する</h2>
+    <div class="instructions-div">    
+    <p>データ内の外れ値を強調表示し、四分位範囲、最小値、最大値などの情報を提供するためにボックスプロットを作成できます。</p>
+    <p>以下を完了してください：</p>
+    <ol>
+        <li>新しいクエリタブを開き、以下のクエリを実行します</li>
+        <li>クエリを「Boxplot」として保存します</li>
+        <li>クエリ結果セクションで、「+」シンボルの上にカーソルを合わせ、「Visualization」をクリックします</li>
+        <li>可視化タイプとして「Box」を選択します</li>
+        <li>「X列」には「product_category」を選択します</li>
+        <li>「Y列」には「total_price」を選択します</li>
+        <li>「X軸」タブをクリックします</li>
+        <li>「名前」フィールドに「商品カテゴリ」と入力して、ユーザーフレンドリーにします</li>
+        <li>「Y軸」タブをクリックします</li>
+        <li>「名前」フィールドに「価格」と入力して、ユーザーフレンドリーにします</li>
+          </ol>
+    <p>外れ値が多数あることに注意してください。これらを無視したくはありませんが、次の手順を完了することで非表示にすることができます：</p>
+    <ol start="11">
+        <li>「終了値」フィールドに「30000」と入力します</li>
+        <li>右下隅の「保存」をクリックします</li>
+        <li>視覚化の名前を「製品別価格」に変更します</li>
+        <li>クエリが保存されていることを確認します</li>
+    </ol>
+    </div></div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-3-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-3-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-3-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-3-sql').style.display = 'block';">答えを表示</button>
+                <button id="step-3-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-3-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-3-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-3-sql-ta" style="width:100%; padding:10px" rows="2">SELECT * FROM sales;</textarea>
+                <textarea id="step-3-sql-backup" style="display:none;">SELECT * FROM sales;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-3-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-3-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-3-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-4-wrapper" style="width:800px;"><div id="step-4-instruction" style="margin-bottom:1em">
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+ファネルを作成する</h2>
+    <div class="instructions-div">    
+    <p>Funnelビジュアライゼーションは、人々が1つのステップから別のステップに進む過程での人数を示します。このラボのこの部分では、セールスオーダーから実際のセールスに進んだ顧客の数を示すファネルを作成します。</p>
+    <p>以下を完了してください：</p>
+    <ol>
+        <li>新しいクエリタブを開き、以下のクエリを実行します</li>
+        <li>クエリを「ファネル」として保存します</li>
+        <li>クエリ結果セクションで、「+」シンボルにカーソルを合わせ、「Visualization」をクリックします</li>
+        <li>「ファネル」を視覚化タイプとして選択します</li>
+        <li>「Step Column」に「Step」を選択します</li>
+        <li>「Value Column」に「Value」を選択します</li>
+    </ol>
+    <p>以上です！このビジュアライゼーションの設定のほとんどはクエリ内に含まれています。クエリはCTEと2つの<span class="monofont">UNION ALL</span>を使用してデータを生成します。実際に起こっていることは、各テーブルで顧客IDを選択して、どの顧客がセールスオーダーとセールスの生成にアクティブであるかを判断しているだけです。</p>
+    <ol start="7">
+        <li>右下隅の「保存」をクリックします</li>
+        <li>タブ内をクリックして、ビジュアライゼーションの名前を「顧客ファネル」に変更します</li>
+        <li>クエリが保存されていることを確認します</li>
+    </ol>
+    </div></div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-4-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-4-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-4-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-4-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-4-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-4-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-4-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-4-sql-ta" style="width:100%; padding:10px" rows="11">WITH funnel AS (
+SELECT DISTINCT "Customers" AS Step, string(customer_id) FROM customers
+        UNION ALL
+    SELECT DISTINCT "Orders" AS Step, customer_id FROM sales_orders
+        UNION ALL
+    SELECT DISTINCT "Sales" AS Step, customer_id FROM sales
+)
+SELECT Step, count(customer_id) as Value 
+    FROM funnel
+    GROUP BY Step;</textarea>
+                <textarea id="step-4-sql-backup" style="display:none;">WITH funnel AS (
+    SELECT DISTINCT "Customers" AS Step, string(customer_id) FROM customers
+        UNION ALL
+    SELECT DISTINCT "Orders" AS Step, customer_id FROM sales_orders
+        UNION ALL
+    SELECT DISTINCT "Sales" AS Step, customer_id FROM sales
+)
+SELECT Step, count(customer_id) as Value 
+    FROM funnel
+    GROUP BY Step;</textarea>
+            </div>
+<div style="text-align:right; margin-top:5px">
+    <button id="step-4-sql-btn" type="button" onclick="
+        let ta = document.getElementById('step-4-sql-ta');
+        ta.select();
+        ta.setSelectionRange(0, ta.value.length);
+        navigator.clipboard.writeText(ta.value);">コピー</button>
+</div>
+</div>
+<div id="step-4-after_codebox_instruction" style="margin-bottom:1em"></div></div><script src="script.js"></script>
+<hr style="margin-top:8em">
+<div>
+    <div>&copy; 2024 Databricks, Inc. All rights reserved.</div>
+    <div>Apache、Apache Spark、SparkおよびSparkロゴは、<a href="https://www.apache.org/">Apache Software Foundation</a>の商標です。</div>
+    <div style="margin-top:1em">
+        <div style="float:left">
+            <a href="https://databricks.com/privacy-policy">プライバシーポリシー</a> | 
+            <a href="https://databricks.com/terms-of-use">利用規約</a> | <a href="https://help.databricks.com/">サポート</a>
+        </div>
+        <div style="float:right">2.1.1</div>
+    </div>               
+        </div></div></body></html>

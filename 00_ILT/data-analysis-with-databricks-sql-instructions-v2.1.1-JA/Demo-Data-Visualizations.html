@@ -1,0 +1,387 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <title>デモ - データビジュアライゼーション</title>
+        <link href='https://fonts.googleapis.com/css?family=DM%20Sans' rel='stylesheet' type='text/css'>
+        <style>
+        body {background-color: #f9f7f4;font-family: 'DM Sans', sans-serif;}
+        h2 {color: #ff3621;}
+        h3 {margin-left: 5px}
+        ol {margin-left: 20px; font-family:sans-serif; color: #0873FF;} //E81334 618794
+        ol li {margin-bottom:5px;}
+        td {padding: 5px;border-bottom: 1px solid #ededed;}
+        tr.selected td {color: white;background-color: red;}
+        .monofont {font-family: monospace; font-size: 14px}
+        .content {max-width: 800px; margin: auto; padding-left: 50px}
+        .image-icon-inline {display:inline; vertical-align: middle; margin: 0 10px 0 10px}
+        .instructions-div {padding-left: 5px}
+    </style>
+            </head>
+            <body onload="loaded()">
+                <div class="content">
+                    <img src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/db-academy-rgb-1200px_no_bg.png" 
+                        alt="Databricks Learning" 
+                        style="width: 600px; margin-left: 100px; margin-right: 100px">
+                <hr>
+                <h1>デモ - データ可視化</h1><div id="inputs">
+                    <p>以下の2つのフィールドは、このコースで使用されるクエリをカスタマイズするために使用されます。</p>
+                    <p><span style="color:red">注意:</span> 以下の2つのフィールドにカタログ名とユーザー名が含まれていない場合は、Cookieが有効になっていないか、<a href="Demo-Setting-Up-a-Catalog-and-Schema.html" target="_blank">こちら</a>の手順に従う必要があります。</p>
+                    <table>
+                        <tr>
+                            <td style="white-space:nowrap">カタログ名:&nbsp;</td>
+                            <td><input id="catalog_name" type="text" style="width:40em" onchange="update();"></td>
+                        </tr><tr>
+                            <td style="white-space:nowrap">ユーザー名:&nbsp;</td>
+                            <td><input id="username" type="text" style="width:40em" onchange="update();"></td>
+                        </tr>
+                    </table>
+                </div><hr>
+<div id="step-1-wrapper" style="width:800px;"><div id="step-1-instruction" style="margin-bottom:1em">    
+
+    <h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+    レッスン目標</h2>
+    <div class="instructions-div">
+   
+    <p>このレッスンの最後には、次のことができるようになります:</p>
+    <ul>
+        <li>レイクハウス向けのスマートでインプラットフォームの可視化ツールであるDatabricks SQLを特定する。</li>
+        <li>Databricks SQLを使用して基本的なスキーマ固有の可視化を作成する。</li>
+        <li>データ可視化を使用して集計統計を計算および表示する。</li>
+        <li>ビジネスレポート目的でデータ可視化内の集計統計を解釈する。</li>
+        <li>Databricks SQLによって作成できるさらにカスタマイズされた可視化を説明する。</li>
+        <li>Databricks SQLを使用して作成できるさまざまな種類の可視化を探索する。</li>
+        <li>データストーリーテリングを支援するためにカスタマイズされたデータ可視化を作成する。</li>
+    </ul></div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-1-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-1-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-1-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-1-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-1-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-1-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-1-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-1-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-1-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-1-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-2-wrapper" style="width:800px;"><div id="step-2-instruction" style="margin-bottom:1em">    
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+カウンター</h2>
+    <div class="instructions-div">
+    <p>カウンターの可視化は、Databricks SQL で最もシンプルな可視化の1つです。デフォルトでは1つの数字を表示しますが、"目標" 数字を表示するように構成することもできます。この例では、完了した売上の合計と "売上目標" を構成します。クエリは総売上の合計を計算し、ハードコードされた売上目標列を提供します。</p>
+    <p>以下を完了してください：</p>
+    <ol>
+        <li>新しいクエリタブを開き、以下のクエリを実行します</li>
+        <li>クエリを "総売上カウンター" として保存します</li>
+    </ol>
+    <p>可視化は、それらのデータを生成するクエリと一緒に保存されます。おそらく "カウンター" より良い名前を選択できるかもしれませんが、この名前は、後でこのレッスンでダッシュボードを構築する際に役立ちます。また、1つのクエリに複数の可視化を添付できることにも注意してください</p>
+<ol start="3">
+        <li>クエリ結果セクションで、「+」シンボルの上にカーソルを合わせ、「Visualization」をクリックします</li>
+        <li>可視化タイプとして「Counter」を選択します</li>
+        <li>「Counter Label」に「Total Sales」と入力します</li>
+        <li>「Counter Value Column」では、列「Total_Sales」が選択されていることを確認します</li>
+        <li>「Target Value Column」で「Sales Goal」を選択します</li>
+    </ol>
+    <p>注意：クエリ自体でデータを集計していない場合は、カウンターを行数を数えるように構成できます。</p>
+    <ol start="8">
+        <li>「Format」タブをクリックします</li>
+        <li>オプション：小数点文字と千の区切り文字を変更します</li>
+        <li>「Total Sales」はドル表示なので、「Formatting String Prefix」に「$」を追加します</li>
+        <li>「Format Target Value」スイッチをオンにします</li>
+        <li>右下隅にある「Save」をクリックします</li>
+        <li>可視化の名前（タブの名前）をクリックして、名前を「総売上」に変更します</li>
+        <li>クエリが保存されていることを確認します</li>
+    </ol>
+    <p></p>
+    </div>
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-2-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-2-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-2-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-2-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-2-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-2-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-2-sql-ta" style="width:100%; padding:10px" rows="3">SELECT sum(total_price) AS Total_Sales, 3000000 AS Sales_Goal
+    FROM sales;</textarea>
+                <textarea id="step-2-sql-backup" style="display:none;">SELECT sum(total_price) AS Total_Sales, 3000000 AS Sales_Goal 
+    FROM sales;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-2-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-2-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-3-wrapper" style="width:800px;"><div id="step-3-instruction" style="margin-bottom:1em">    
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+コンボチャート</h2>
+    <div class="instructions-div">
+    <p>Databricks SQLでは、チャートを美しく見せるためのさまざまなカスタマイズオプションがサポートされています。この例では、棒グラフから始めて、折れ線グラフを追加して、実質的にコンボチャートに変えます。</p>
+    <p>以下を完了します:</p>
+<ol>
+        <li>新しいクエリタブを開き、以下のクエリを実行します</li>
+        <li>クエリを「3ヶ月の売上」として保存します</li>
+        <li>クエリ結果セクションで、「＋」シンボルをホバーして、「可視化」をクリックします</li>
+        <li>可視化タイプとして「バー」を選択します</li>
+        <li>「X列」には「月」を選択します</li>
+        <li>「Y列」では、「列を追加」をクリックして、「合計売上」と「合計」を選択します</li>
+        <li>再度「列を追加」をクリックして、「合計売上」と「カウント」を選択します</li>
+        <li>「Y軸」タブをクリックし、「名前」フィールド（左Y軸）に「ドル」と入力します</li>
+        <li>「シリーズ」タブをクリックし、最初の「ラベル」フィールドに「合計売上」と入力します</li>
+        <li>2番目の「ラベル」フィールドに「販売数」と入力し、「タイプ」を「ライン」に変更します</li>
+        <li>「Y軸」タブで、スケールを「対数」に変更します</li>
+        <li>右下隅にある「保存」をクリックします</li>
+        <li>可視化の名前（タブの名前）をクリックして、「月別売上」に名前を変更します</li>
+        <li>クエリが保存されていることを確認します</li>
+    </ol>
+    <p>可視化からは、8月と10月の売上数は少なかったが、その売上額は高かったことがわかります。逆に、9月はその逆でした。</p>
+    </div>
+<div style="display: none;">
+            <div>
+                <textarea id="step-3-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-3-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-3-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-3-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-3-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-3-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-3-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-3-sql-ta" style="width:100%; padding:10px" rows="5">SELECT customer_name, total_price AS Total_Sales, date_format(order_date, "MM") AS Month, product_category 
+    FROM sales 
+
+    WHERE order_date >= to_date('2019-08-01') 
+    AND order_date <= to_date('2019-10-31');</textarea>
+                <textarea id="step-3-sql-backup" style="display:none;">SELECT customer_name, total_price AS Total_Sales, date_format(order_date, "MM") AS Month, product_category 
+    FROM sales 
+    WHERE order_date >= to_date('2019-08-01') 
+    AND order_date <= to_date('2019-10-31');</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-3-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-3-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-3-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-4-wrapper" style="width:800px;"><div id="step-4-instruction" style="margin-bottom:1em">    
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+バー チャート</h2>
+<div class="instructions-div">
+    <p>同じクエリから、2番目の可視化を追加することでさらに多くのデータを収集できます。データ分析で最もよく使われる可視化の1つは棒グラフです。この例では、積み上げ棒グラフを作成します。</p>
+    <p>以下を完了してください：</p>
+    <ol>
+        <li>"+" 記号の上にカーソルを合わせ、"Visualization" をクリックします</li>
+        <li>"Visualization Type" を "Bar" に変更します</li>
+        <li>"X Column" に "product_category" を選択します</li>
+        <li>Y 列を2つ追加し、両方を "Total_Sales" に変更します。最初を "Average" に、2番目を "Min" に変更します</li>
+        <li>"Stacking" を "Stack" に変更します</li>
+        <li>"X Axis" タブで、名前を "商品カテゴリ" に変更します</li>
+        <li>"Y Axis" タブで、名前を "ドル" に変更します</li>
+        <li>"Series" タブで、最初の行ラベルを "平均売上" に、2番目の行を "最小売上" に変更します</li>
+        <li>右下隅にある "Save" をクリックします</li>
+        <li>可視化の名前（タブの名前）をクリックし、名前を "商品別売上" に変更します</li>
+        <li>クエリが保存されていることを確認します</li>
+    </ol>
+    <p>この可視化によって、"Reagate" カテゴリが最も低い平均売上高を持っているにもかかわらず、最高の最小売上高を持っていることが示されます。</p>
+</div>
+<div style="display: none;">
+    <div>
+        <textarea id="step-4-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+        <textarea id="step-4-test-backup" style="display:none;"></textarea>
+    </div>
+    <div style="text-align:right; display: none; margin-top:5px">
+        <button id="step-4-test-show-btn" type="button" style="display:none;" 
+                onclick="document.getElementById('step-4-sql').style.display = 'block';">回答を表示</button>
+        <button id="step-4-test-btn" type="button"  onclick="
+            let ta = document.getElementById('step-4-test-ta');
+            ta.select();
+            ta.setSelectionRange(0, ta.value.length);
+            navigator.clipboard.writeText(ta.value);">コピー</button>
+    </div>
+</div>
+
+<div id="step-4-sql" style="width:800px; display: none;">
+    <div>
+        <textarea id="step-4-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+        <textarea id="step-4-sql-backup" style="display:none;"></textarea>
+    </div>
+</div>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-4-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-4-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-4-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-5-wrapper" style="width:800px;"><div id="step-5-instruction" style="margin-bottom:1em">    
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+マップ - コロプレス</h2>
+    <div class="instructions-div">
+    <p>Databricks SQLには、住所やジオロケーションデータをプロットするために使用できる2つのマップビジュアライゼーションがあります: コロプレスとマーカー。コロプレスマップビジュアライゼーションは、特定の地理的エリア内の基準の数を示すために色を使用します。この例では、顧客の住所データを使用して、各米国の州にいる顧客数をプロットします。</p> 
+    <p>コロプレスマップを作成するには、次の手順を実行します:</p>
+    <ol>
+        <li>新しいクエリタブを開き、以下のクエリを実行します</li>
+        <li>クエリを「州別の顧客数」として保存します</li>
+        <li>"+"シンボルの上にマウスを置き、「Visualization」をクリックします</li>
+        <li>「Map (Choropleth)」を可視化タイプとして選択します</li>
+        <li>「General」タブで、「Map」を「USA」、「Geographic column」を「state」、「Geographic type」を「USPS Abbreviation」、「Value Column」を「count(customer_id)」に変更します</li>
+        <li>右下隅にある「Save」をクリックします</li>
+        <li>可視化名（タブの名前）をクリックして、「アクティブな州」に名前を変更します</li>
+        <li>クエリが保存されていることを確認します</li>
+    </ol>
+    
+    </div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-5-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-5-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-5-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-5-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-5-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-5-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-5-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-5-sql-ta" style="width:100%; padding:10px" rows="3">SELECT state, count(customer_id) FROM customers
+    GROUP BY state;</textarea>
+                <textarea id="step-5-sql-backup" style="display:none;">SELECT state, count(customer_id) FROM customers
+    GROUP BY state;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-5-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-5-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-5-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-6-wrapper" style="width:800px;"><div id="step-6-instruction" style="margin-bottom:1em">    
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+マップ - マーカー</h2>
+    <div class="instructions-div">
+    <p>「マップ（マーカー）」可視化タイプは、特定の場所を示す地図上にポイントをプロットします。この例では、顧客の場所の緯度と経度データがあります。これを使用して、これらの場所を地図上にプロットします。</p> 
+    <p>以下を完了します:</p>
+    <ol>
+        <li>SQLエディタを開いた状態で、クエリタブの「+」をクリックします</li>
+        <li>別のデモで「すべての顧客」というタイトルのクエリを作成した場合、「既存のクエリを開く」オプションを選択し、「すべての顧客」クエリを開きます。続行するにはステップ6に進みます。</li>
+        <li>以前に「すべての顧客」というタイトルのクエリを作成していない場合は、「新しいクエリを作成する」オプションを選択します。</li>
+        <li>以下のクエリコードを新しいクエリにコピーして貼り付けます。</li>
+        <li>クエリを「すべての顧客」として保存します。</li>
+        <li>「Results」パネルの隣にある「+」をクリックし、「Visualization」を選択します。</li>
+        <li>表示されるポップアップで、「Visualization type」ドロップダウンから「Map (Markers)」を選択します。</li>
+        <li>「General」タブで、「Latitude Column」を「lat」、「Longitude Column」を「lon」、「Group By」を「state」に変更します</li>
+        <li>「Format」タブで、ツールヒントを有効にし、「Tooltip template」フィールドに「&lcub;&lcub;customer_name&rcub;&rcub;」と入力します</li>
+        <li>右下隅の「保存」をクリックします</li>
+        <li>可視化の名前（タブの名前）をクリックして、「顧客ロケーション」という名前に変更します</li>
+        <li>クエリが保存されていることを確認します</li>
+    </ol> 
+    
+    </div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-6-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-6-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-6-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-6-sql').style.display = 'block';">答えを表示</button>
+                <button id="step-6-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-6-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-6-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-6-sql-ta" style="width:100%; padding:10px" rows="2">SELECT * FROM customers;</textarea>
+                <textarea id="step-6-sql-backup" style="display:none;">SELECT * FROM customers;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-6-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-6-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-6-after_codebox_instruction" style="margin-bottom:1em"></div></div><script src="script.js"></script>
+        <hr style="margin-top:8em">
+        <div>
+<div>&copy; 2024 Databricks, Inc. すべての権利を保有します。</div>
+<div>Apache、Apache Spark、Spark および Spark ロゴは <a href="https://www.apache.org/">Apache Software Foundation</a> の商標です。</div>
+<div style="margin-top:1em">
+    <div style="float:left">
+        <a href="https://databricks.com/privacy-policy">プライバシーポリシー</a> | 
+        <a href="https://databricks.com/terms-of-use">利用規約</a> | <a href="https://help.databricks.com/">サポート</a>
+    </div>
+    <div style="float:right">2.1.1</div>
+</div>

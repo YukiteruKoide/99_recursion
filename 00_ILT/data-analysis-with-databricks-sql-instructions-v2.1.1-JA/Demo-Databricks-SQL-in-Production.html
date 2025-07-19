@@ -1,0 +1,412 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <title>デモ - Databricks SQLの本番運用</title>
+        <link href='https://fonts.googleapis.com/css?family=DM%20Sans' rel='stylesheet' type='text/css'>
+        <style>
+        body {background-color: #f9f7f4;font-family: 'DM Sans', sans-serif;}
+        h2 {color: #ff3621;}
+        h3 {margin-left: 5px}
+        ol {margin-left: 20px; font-family:sans-serif; color: #0873FF;} //E81334 618794
+        ol li {margin-bottom:5px;}
+        td {padding: 5px;border-bottom: 1px solid #ededed;}
+        tr.selected td {color: white;background-color: red;}
+        .monofont {font-family: monospace; font-size: 14px}
+        .content {max-width: 800px; margin: auto; padding-left: 50px}
+        .image-icon-inline {display:inline; vertical-align: middle; margin: 0 10px 0 10px}
+        .instructions-div {padding-left: 5px}
+    </style>
+            </head>
+            <body onload="loaded()">
+                <div class="content">
+                    <img src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/db-academy-rgb-1200px_no_bg.png" 
+                        alt="Databricks Learning" 
+                        style="width: 600px; margin-left: 100px; margin-right: 100px">
+                <hr>
+                <h1>デモ - Databricks SQL の本番運用</h1><div id="inputs">
+                    <p>以下の2つのフィールドは、このコースで使用されるクエリをカスタマイズするために使用されます。</p>
+                    <p><span style="color:red">注意:</span> 以下の2つのフィールドにカタログ名とユーザー名が含まれていない場合、Cookie が有効になっていないか、<a href="Demo-Setting-Up-a-Catalog-and-Schema.html" target="_blank">こちら</a>の手順に従う必要があります。</p>
+                    <table>
+                        <tr>
+                            <td style="white-space:nowrap">カタログ名:&nbsp;</td>
+                            <td><input id="catalog_name" type="text" style="width:40em" onchange="update();"></td>
+                        </tr><tr>
+                            <td style="white-space:nowrap">ユーザー名:&nbsp;</td>
+                            <td><input id="username" type="text" style="width:40em" onchange="update();"></td>
+                        </tr>
+                    </table>
+                </div><hr>
+<div id="step-1-wrapper" style="width:800px;"><div id="step-1-instruction" style="margin-bottom:1em">    
+
+    <h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+    レッスンの目標</h2>
+    <div class="instructions-div">
+    <p>このレッスンの最後には、以下のことができるようになります:</p>
+    <ul>
+        <li>Databricks SQLとDatabricks Data Intelligence Platformの他の部分との間でSQL自動化機能を比較および対照する。</li>
+        <li>リフレッシュスケジュールがダッシュボードに与える影響を説明する。</li>
+        <li>自動リフレッシュスケジュールを持つダッシュボードを作成する。</li>
+        <li>一般的なシナリオでクエリアラートを実装する。</li>
+        <li>フラットなゴールドレベルテーブルを作成するための本番向けのアナリティクスソリューションを開発する。</li>
+    </ul></div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-1-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-1-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-1-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-1-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-1-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-1-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-1-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-1-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-1-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-1-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-2-wrapper" style="width:800px;"><div id="step-2-instruction" style="margin-bottom:1em"><h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+SQLの自動化</h2>
+    <div class="instructions-div">
+    <p>Databricks SQLを使用すると、レイクハウスでの作業をより簡単にする多くのタスクを自動化できます。Databricks SQLで利用できる自動化機能は次のとおりです:</p>
+    <ul>
+        <li>クエリの更新スケジュール</li>
+        <li>ダッシュボードの更新スケジュール</li>
+        <li>アラート</li>
+    </ul>
+    <p>これらの自動化機能は、Databricks SQL内で構成されており、レイクハウスの他の自動化機能とは独立しています。つまり、レイクハウスのどこでもデータに影響を与えることができますが、ワークフローやジョブを使用しません。さらに、これらの機能はクラスターではなくSQL Warehouseを使用します。</p>
+    </div></div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-2-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-2-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-2-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-2-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-2-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-2-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-2-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-2-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-2-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-2-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-3-wrapper" style="width:800px;"><div id="step-3-instruction" style="margin-bottom:1em"><h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+クエリ更新スケジュール</h2>
+    <div class="instructions-div">
+    <p>スケジュールされたクエリの実行を使用して、ダッシュボードを更新したり、定期的なアラートを有効にしたりできます。クエリを作成して更新スケジュールを設定しましょう。</p>
+    <ol>
+        <li>以下のクエリを実行します。</li>
+        <li>「新しいクエリ」をクリックして、「Gym Logs」と入力してクエリの名前を変更します。</li>
+        <li>クエリウィンドウの右上隅にある「保存」をクリックします。</li>
+    </ol>
+    <p>後でこのレッスンで参照できるように、クエリは説明的な名前で保存する必要があります。このクエリを自動的に更新するには:</p>
+    <ol start="4">
+        <li>「保存」の隣にある「スケジュール」をクリックします。</li>
+        <li>ドロップダウンメニューから「スケジュールの追加」をクリックします。</li>
+        <li>スケジュールを毎時0分に設定し、ドロップダウンメニューからタイムゾーンを確認します。</li>
+<li>「作成」をクリックして、クエリのスケジュールを確認してください。</li>
+</ol>
+<p><span style="color:red">警告: リフレッシュレートがSQL Warehouseの「自動停止」パラメータよりも低い場合、Warehouseは無期限に実行されます。</span></p>
+</div></div>
+<div style="display: none;">
+    <div>
+        <textarea id="step-3-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+        <textarea id="step-3-test-backup" style="display:none;"></textarea>
+    </div>
+    <div style="text-align:right; display: none; margin-top:5px">
+        <button id="step-3-test-show-btn" type="button" style="" 
+                onclick="document.getElementById('step-3-sql').style.display = 'block';">回答を表示する</button>
+        <button id="step-3-test-btn" type="button"  onclick="
+            let ta = document.getElementById('step-3-test-ta');
+            ta.select();
+            ta.setSelectionRange(0, ta.value.length);
+            navigator.clipboard.writeText(ta.value);">コピー</button>
+    </div>
+</div>
+
+        <div id="step-3-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-3-sql-ta" style="width:100%; padding:10px" rows="7">SELECT gym, count(*) number_of_visits 
+    
+
+FROM gym_logs
+GROUP BY gym
+ORDER BY gym;</textarea>
+                <textarea id="step-3-sql-backup" style="display:none;">SELECT gym, count(*) number_of_visits 
+    
+
+FROM gym_logs
+GROUP BY gym
+ORDER BY gym;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-3-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-3-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-3-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-4-wrapper" style="width:800px;"><div id="step-4-instruction" style="margin-bottom:1em"><h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+アラート</h2>
+    <div class="instructions-div">
+    <p>アラートは、クエリやダッシュボードと同様に、フォルダ構造内で整理され、その位置を把握するのに役立ちます。アラートを使用すると、スケジュールされたクエリによって返されたフィールドが特定の閾値を満たしたときに通知を構成できます。ここでは、クエリの更新スケジュールを構成したばかりですが、アラートは独自のスケジュールで実行されます。</p>
+    <p>アラートを作成するには：</p>
+    <ol>
+        <li>サイドバーメニューで「アラート」をクリックします。</li>
+        <li>「アラートの作成」をクリックします。</li>
+        <li>表示される画面で、アラートに名前を付けます。</li>
+        <li>「クエリ」のドロップダウンから、以前作成したクエリ「Gym Logs」を選択します。</li>
+        <li>次の設定を調整してトリガー条件を設定します：「値の列」で「number_of_visits」と「最初の行」を選択し、「演算子」列で「以上」と演算子を選択し、「閾値の値」を「4」に変更します。</li>
+        <li>最下部の「アラートの作成」をクリックします。</li>
+    </ol>   
+    <p>アラートは、クエリの結果の最上行のカウントが4以上の場合にトリガーされます。アラートをトリガーしたときに通知を受け取るためには、誰かがその宛先を設定する必要があります。これを行うには、アラートをチェックし、アラートがトリガーされた場合の通知の宛先を設定するスケジュールを追加します。</p>
+    
+    <ol start="7">
+<li>画面上の「スケジュールを追加」テキストを選択します。</li>
+<li>毎日午前9:00にローカル時間でスケジュールを設定します。</li>
+<li>必要に応じてスケジュールの名前を変更します。</li>
+<li>「Destinations」タブをクリックします。</li>
+<li>検索バーからユーザーのメールアドレスを見つけ、それを宛先リストに追加するためにクリックします。</li>
+<li>「作成」をクリックしてダイアログボックスを閉じ、スケジュールと宛先の選択内容を保存します。</li>
+</ol>
+<p>アラートとリフレッシュスケジュールの設定に関する注意点: 実行されるたびに、SQL Warehouse は起動し（停止している場合）、クエリを実行してアイドル状態になります。自動停止時間が経過すると、SQL Warehouse は停止します。リフレッシュスケジュールがSQL Warehouse の自動停止時間よりも短い時間制限に設定されている場合、Warehouse は決して停止しません。これによりコストが増加する可能性があります。</p>
+
+<p>アラートをトリガーするためにデータを追加しましょう。</p>
+<ol start="13">
+<li>以下のコードを実行してデータを追加し、アラートをトリガーします。</li>
+</ol>
+<p>このコードは、ジムの訪問回数を閾値を超えるように増やし、アラートをトリガーします。</p>
+</div>
+
+</div>
+<div style="display: none;">
+<div>
+<textarea id="step-4-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-4-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-4-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-4-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-4-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-4-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-4-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-4-sql-ta" style="width:100%; padding:10px" rows="2">INSERT INTO gym_logs (first_timestamp, gym, last_timestamp, mac) VALUES (1575184296.00, 2.00, 1575191636.00, "e5:a8:d5:73:cf:33");</textarea>
+                <textarea id="step-4-sql-backup" style="display:none;">INSERT INTO gym_logs (first_timestamp, gym, last_timestamp, mac) VALUES (1575184296.00, 2.00, 1575191636.00, "e5:a8:d5:73:cf:33");</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-4-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-4-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-4-after_codebox_instruction" style="margin-bottom:1em">
+    <div class="instructions-div">
+    <p>クエリとアラートを整理するには、アラートを削除し、クエリの更新スケジュールを無効にするために、以下の手順に従ってください。</p>
+    <ol>
+        <li>Gym Log アラートを開いた状態で、kabob メニューを選択し、ドロップダウンメニューから "Move to trash" を選択します。このアクションにより、アラートが削除され非アクティブ化されます。</li>
+        <li>サイドバーメニューからクエリに戻ります。</li>
+        <li>Gym Logs クエリを選択して再度開きます。</li>
+        <li>クエリ画面の右上隅から "Schedule (1)" をクリックします。</li>
+        <li>ドロップダウンメニューから “Delete” を選択して、クエリからスケジュールされた更新を削除します。</li>
+    </ol>
+    </div>
+    
+    </div></div><hr>
+<div id="step-5-wrapper" style="width:800px;"><div id="step-5-instruction" style="margin-bottom:1em"><h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+
+クエリの共有</h2>
+<div class="instructions-div">
+<p>チームの他のメンバーとクエリを共有することができます:</p>
+<ol>
+    <li>サイドバーメニューから「SQL エディター」を選択します。</li>
+    <li>SQL エディターウィンドウの上部から共有したいクエリタブを選択します。</li>
+    <li>右上隅から「共有」を選択します。</li>
+</ol>   
+<p>「共有: &lt;クエリ名&gt;」のダイアログボックスが表示されます。クエリを共有する権限がない場合、すべてのオプションがグレーアウトされ、編集できません。クエリの所有者として、あなたには「管理できる」権限があります。ワークスペースで構成されたユーザーやグループとクエリを共有できます。「管理できる」、「編集できる」、「実行できる」、「表示できる」の権限を持つこれらのユーザーやグループが存在します。「編集できる」権限を許可するには、「資格情報」ドロップダウンを「閲覧者として実行」に変更する必要があります。</p>
+<ol start="4">
+    <li>「複数のユーザーまたはグループを追加するには入力」と書かれたドロップダウンボックスを選択します。提案が表示されますが、代わりにユーザーまたはグループ名を入力して選択できます。この例では、「すべてのユーザー」を選択します。</li>
+    <li>「管理できる」のオプションを「編集できる」、「実行できる」、「表示できる」に切り替えます。</li>
+    <li>ダイアログボックスを閉じるために「追加」をクリックします。</li>
+    <li>右上隅の「X」をクリックして共有ダイアログを閉じます。</li>
+</ol>   
+<p>クエリに付与された「編集できる」権限は、クエリの資格情報タイプを「所有者として実行」に変更する前に取り消される必要があります。</p>
+</div>
+
+</div>
+<div style="display: none;">
+<div>
+    <textarea id="step-5-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+    <textarea id="step-5-test-backup" style="display:none;"></textarea>
+</div>
+<div style="text-align:right; display: none; margin-top:5px">
+    <button id="step-5-test-show-btn" type="button" style="display:none;" 
+            onclick="document.getElementById('step-5-sql').style.display = 'block';">回答を表示</button>
+    <button id="step-5-test-btn" type="button"  onclick="
+        let ta = document.getElementById('step-5-test-ta');
+        ta.select();
+        ta.setSelectionRange(0, ta.value.length);
+        navigator.clipboard.writeText(ta.value);">コピー</button>
+</div>
+</div>
+      
+<div id="step-5-sql" style="width:800px; display: none;">
+    <div>
+        <textarea id="step-5-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+        <textarea id="step-5-sql-backup" style="display:none;"></textarea>
+    </div>
+        <div style="text-align:right; margin-top:5px">
+            <button id="step-5-sql-btn" type="button"  onclick="
+                let ta = document.getElementById('step-5-sql-ta');
+                ta.select();
+                ta.setSelectionRange(0, ta.value.length);
+                navigator.clipboard.writeText(ta.value);">コピー</button>
+        </div>
+    </div>
+    <div id="step-5-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-6-wrapper" style="width:800px;"><div id="step-6-instruction" style="margin-bottom:1em"><h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+ダッシュボードの共有</h2>
+    <div class="instructions-div">
+    <p>ダッシュボードの共有は、クエリの共有と同様に行われます。ダッシュボードの右上隅から「共有」をクリックして、共有ダイアログを開きます。</p>
+       
+    </div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-6-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-6-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-6-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-6-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-6-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-6-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-6-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-6-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-6-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-6-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-6-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-6-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-7-wrapper" style="width:800px;"><div id="step-7-instruction" style="margin-bottom:1em"><h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+ダッシュボードの更新と結果の共有</h2>
+    <div class="instructions-div">
+    <p>ダッシュボードに更新スケジュールを追加する方法は、クエリに更新スケジュールを追加するのと似ています。ただし、ダッシュボードに更新スケジュールを追加するときは、ダッシュボードが更新された際にユーザーに通知する購読者を含めるオプションがあります。</p>
+    <ol>
+
+        <li>更新スケジュールを追加したいダッシュボードの右上隅にある「スケジュール」をクリックします。</li>
+        <li>ダッシュボードを更新する頻度を指定します。</li>
+        <li>必要に応じてスケジュールのタイムゾーンを設定します。</li>
+        <li>「その他のオプション」の下で、スケジュール名を編集し、ダッシュボードを更新するために使用されるSQL Warehouseを選択します。</li>
+        <li>「スケジュールを追加」ドロップダウンメニューの「設定」の隣にある「購読者」を選択します。</li> 
+    </ol>    
+    <p>ダッシュボードのスナップショットを購読者に送信するかどうかを切り替えるオプションがあります。さらに、購読者に送信される更新のデフォルトのメール件名を設定することができます。</p>
+<ol start="6">
+    <li>「検索してユーザーまたは宛先を追加」フィールドを使用して、この更新スケジュールの購読者リストにユーザー、グループ、または宛先（Slack チャンネルなど）を追加します。</li>
+    <li>構成を完了したら、「作成」をクリックしてスケジュールを設定します。</li>
+    <li>スケジュールドロップダウンから、ケバブメニューをクリックして、スケジュールの編集、クローン、スケジュール権限の編集、一時停止、または更新スケジュールへの購読ができます。さらに、このドロップダウンから直接更新スケジュールを削除することもできます。</li>
+</ol>
+<p><span style="color:red">警告：ダッシュボードの更新間隔が SQL Warehouse の「自動停止」パラメータよりも短い場合、Warehouse は無期限に実行され、プラットフォームコストに影響を与えます。</span></p>
+</div>
+
+</div>
+    <div style="display: none;">
+        <div>
+            <textarea id="step-7-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+            <textarea id="step-7-test-backup" style="display:none;"></textarea>
+        </div>
+        <div style="text-align:right; display: none; margin-top:5px">
+            <button id="step-7-test-show-btn" type="button" style="display:none;" 
+                    onclick="document.getElementById('step-7-sql').style.display = 'block';">答えを表示</button>
+            <button id="step-7-test-btn" type="button"  onclick="
+                let ta = document.getElementById('step-7-test-ta');
+                ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-7-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-7-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-7-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-7-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-7-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-7-after_codebox_instruction" style="margin-bottom:1em"></div></div><script src="script.js"></script>
+        <hr style="margin-top:8em">
+<div>
+            <div>&copy; 2024 Databricks, Inc. All rights reserved.</div>
+            <div>Apache、Apache Spark、Spark および Spark ロゴは <a href="https://www.apache.org/">Apache Software Foundation</a> の商標です。</div>
+            <div style="margin-top:1em">
+                <div style="float:left">
+                    <a href="https://databricks.com/privacy-policy">プライバシーポリシー</a> | 
+                    <a href="https://databricks.com/terms-of-use">利用規約</a> | <a href="https://help.databricks.com/">サポート</a>
+                </div>
+                <div style="float:right">2.1.1</div>
+            </div>               
+        </div></div></body></html>

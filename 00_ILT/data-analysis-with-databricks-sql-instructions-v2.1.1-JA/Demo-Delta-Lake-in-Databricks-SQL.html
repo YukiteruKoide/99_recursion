@@ -1,0 +1,540 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <title>デモ - Databricks SQLのDelta Lake</title>
+        <link href='https://fonts.googleapis.com/css?family=DM%20Sans' rel='stylesheet' type='text/css'>
+        <style>
+        body {background-color: #f9f7f4;font-family: 'DM Sans', sens-serif;}
+        h2 {color: #ff3621;}
+        h3 {margin-left: 5px}
+        ol {margin-left: 20px; font-family:sans-serif; color: #0873FF;} //E81334 618794
+        ol li {margin-bottom:5px;}
+        td {padding: 5px;border-bottom: 1px solid #ededed;}
+        tr.selected td {color: white;background-color: red;}
+        .monofont {font-family: monospace; font-size: 14px}
+        .content {max-width: 800px; margin: auto; padding-left: 50px}
+        .image-icon-inline {display:inline; vertical-align: middle; margin: 0 10px 0 10px}
+        .instructions-div {padding-left: 5px}
+    </style>
+            </head>
+            <body onload="loaded()">
+                <div class="content">
+                    <img src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/db-academy-rgb-1200px_no_bg.png" 
+                        alt="Databricks Learning" 
+                        style="width: 600px; margin-left: 100px; margin-right: 100px">
+                <hr>
+                <h1>デモ - Databricks SQL での Delta Lake</h1><div id="inputs">
+                    <p>以下の2つのフィールドは、このコースで使用されるクエリをカスタマイズするために使用されます。</p>
+                    <p><span style="color:red">注意:</span> 以下の2つのフィールドにカタログ名とユーザー名が含まれていない場合、Cookie が有効になっていないか、<a href="Demo-Setting-Up-a-Catalog-and-Schema.html" target="_blank">こちら</a>の手順に従う必要があります。</p>
+                    <table>
+                        <tr>
+                            <td style="white-space:nowrap">カタログ名:&nbsp;</td>
+                            <td><input id="catalog_name" type="text" style="width:40em" onchange="update();"></td>
+                        </tr><tr>
+                            <td style="white-space:nowrap">ユーザー名:&nbsp;</td>
+                            <td><input id="username" type="text" style="width:40em" onchange="update();"></td>
+                        </tr>
+                    </table>
+                </div><hr>
+<div id="step-1-wrapper" style="width:800px;"><div id="step-1-instruction" style="margin-bottom:1em">    
+
+    <h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+    レッスンの目標</h2>
+    <div class="instructions-div">
+    <p>このレッスンの最後に、次のことができるようになります:</p>
+    <ul>
+        <li>Delta Lakeをデータファイルを管理するツールとして説明する。</li>
+        <li>Lakehouse内でのDelta Lakeの利点を説明する。</li>
+        <li>Delta Lakeと一般的なエンタープライズデータウェアハウスとの主な違いを特定する。</li>
+        <li>Databricksでスキーマ(データベース)、テーブル、ビューを作成および管理するためのベストプラクティスを要約する。</li>
+        <li>Databricksを使用してスキーマ(データベース)、テーブル、ビューを作成、使用、および削除する。</li>
+        <li>組み込みのテクニックを使用して、よく使用されるDeltaテーブルをストレージに最適化する。</li>
+        <li>ANSI SQLをDatabricksでのSQLのデフォルト標準と特定する。</li>
+        <li>DeltaおよびUnity Catalog固有のSQLコマンドを、Lakehouseの優先データ管理およびガバナンス手法として特定する。</li>
+        <li>一般的なソース環境のSQLとDatabricks Lakehouse SQLの主な違いを特定する。</li>
+        <li>Databricks SQL実行環境の基礎を説明する。</li>
+        <li>中級および上級のデータ操作を拡張するためにSparkおよびDatabricks固有の組み込み関数を適用する。</li>
+        <li>遅いクエリを特定し、改善するためにクエリ履歴とパフォーマンスを確認する。</li>
+        <li>シルバーレベルのデータにアクセスしてクリーンアップする。</li>
+
+
+        <li>SQLユーザー定義関数（UDFs）の目的を説明する。</li>
+        <li>メダリオンアーキテクチャのコンテキストでSQL関数を作成および適用する。</li>
+        <li>Databricks SQLを使用してデータを取り込む</li>
+
+    </ul></div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-1-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-1-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-1-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-1-sql').style.display = 'block';">答えを表示</button>
+                <button id="step-1-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+
+
+            </div>
+        </div>
+          
+        <div id="step-1-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-1-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-1-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-1-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-1-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-2-wrapper" style="width:800px;"><div id="step-2-instruction" style="margin-bottom:1em">    
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+Delta Lake</h2>
+    <div class="instructions-div">
+    <p>Delta Lakeは、Databricks Data Intelligence Platformでデータとテーブルを格納するための最適化されたストレージレイヤーです。Delta Lakeは、ParquetデータファイルをACIDトランザクションとスケーラブルなメタデータ処理のためにファイルベースのトランザクションログで拡張するオープンソースソフトウェアです。Delta Lakeを使用すると、バッチおよびストリーミング操作の両方でデータの単一コピーを簡単に使用でき、スケーラブルな処理を提供します。</p>
+    
+    <p>以下は、Databricks LakehouseでDelta Lakeを使用する利点です:</p>
+    <img src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/courses/data-analysis-with-databricks-sql/Delta+Lake+High+Level+Overview_crop.png" style="width:100%">
+    <p>以下は、LakehouseでDelta Lakeを使用することと他のデータウェアハウスソリューションを使用することの違いのいくつかです:</p>
+    <ul>
+        <li>データレイクに格納されたデータのACIDトランザクション</li>
+        <li>真実の単一ソース</li>
+        <li>タイムトラベル</li>
+        <li>スキーマの進化/強制</li>
+        <li>オープンアーキテクチャ</li>
+    </ul>
+    </div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-2-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-2-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-2-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-2-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-2-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-2-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-2-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-2-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-2-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-2-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-3-wrapper" style="width:800px;"><div id="step-3-instruction" style="margin-bottom:1em">    
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+スキーマと1つのテーブルを作成</h2>
+    <div class="instructions-div">
+    <span style="color:red;">注意: このレッスンのこの部分で説明されているようにスキーマ（データベース）を作成するには、Databricksの管理者からスキーマを作成する権限が必要です。</span>
+    <p>新しいスキーマ（データベース）を作成し、そのスキーマに1つのテーブルを追加する方法を示します。</p>
+    <ol>
+        <li>サイドバーメニューでSQLエディタをクリックしてSQLエディタに移動します</li>
+        <li>以下のコードを実行します。</li>
+    </ol>
+    </div></div>
+        <div style="display: none;">
+<div>
+    <textarea id="step-3-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+    <textarea id="step-3-test-backup" style="display:none;"></textarea>
+</div>
+<div style="text-align:right; display: none; margin-top:5px">
+    <button id="step-3-test-show-btn" type="button" style="" 
+            onclick="document.getElementById('step-3-sql').style.display = 'block';">回答を表示</button>
+    <button id="step-3-test-btn" type="button"  onclick="
+        let ta = document.getElementById('step-3-test-ta');
+        ta.select();
+        ta.setSelectionRange(0, ta.value.length);
+        navigator.clipboard.writeText(ta.value);">コピー</button>
+</div>
+</div>
+
+<div id="step-3-sql" style="width:800px; ">
+    <div>
+        <textarea id="step-3-sql-ta" style="width:100%; padding:10px" rows="6">DROP SCHEMA IF EXISTS temporary_schema CASCADE;
+CREATE SCHEMA IF NOT EXISTS temporary_schema;
+CREATE OR REPLACE TABLE temporary_schema.simple_table (width INT, length INT, height INT);
+INSERT INTO temporary_schema.simple_table VALUES (3, 2, 1);
+SELECT * FROM temporary_schema.simple_table;</textarea>
+                <textarea id="step-3-sql-backup" style="display:none;">DROP SCHEMA IF EXISTS temporary_schema CASCADE;
+CREATE SCHEMA IF NOT EXISTS temporary_schema;
+CREATE OR REPLACE TABLE temporary_schema.simple_table (width INT, length INT, height INT);
+INSERT INTO temporary_schema.simple_table VALUES (3, 2, 1);
+SELECT * FROM temporary_schema.simple_table;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-3-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-3-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+<div id="step-3-after_codebox_instruction" style="margin-bottom:1em">
+        <div class="instructions-div">
+    <p>コードは5つのステートメントを実行します。最初のステートメントは、複数回実行される可能性があるため、スキーマを削除します。2番目のステートメントは、スキーマを作成します。スキーマは、実行ボタンの右側のドロップダウンで選択されたカタログに作成されます。</p>
+    <p>3番目のステートメントでは、クエリエディターの上のドロップダウンで選択されたスキーマを上書きし、作成したスキーマを <span class='monofont'>USE</span> します。</p>
+
+
+<p>最後の3つのステートメントでは、シンプルなテーブルを作成し、1行のデータで埋め、そのデータを<span class='monofont'>SELECT</span>します。</p>
+
+</div>
+    
+</div></div><hr>
+<div id="step-4-wrapper" style="width:800px;"><div id="step-4-instruction" style="margin-bottom:1em">    
+
+<h3>テーブルのメタデータを表示</h3>
+    <div class="instructions-div">
+    <ol>
+        <li>以下のコードを実行して、作成したテーブルに関する情報を表示します。</li>
+    </ol>
+    <p>このテーブルは管理されたテーブルであり、基になるデータはメタストアのデフォルトの場所に保存されています。このテーブルを削除すると、データが削除されます。また、これはDeltaテーブルであることにも注意してください。</p>
+    </div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-4-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-4-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-4-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-4-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-4-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-4-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-4-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-4-sql-ta" style="width:100%; padding:10px" rows="2">DESCRIBE EXTENDED temporary_schema.simple_table;</textarea>
+                <textarea id="step-4-sql-backup" style="display:none;">DESCRIBE EXTENDED temporary_schema.simple_table;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-4-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-4-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-4-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-5-wrapper" style="width:800px;"><div id="step-5-instruction" style="margin-bottom:1em">    
+
+<h3>テーブルを削除する</h3>
+    <div class="instructions-div">
+    <ol start="5">
+        <li>以下のコードを実行してテーブルを削除します。</li>
+    </ol>
+    </div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-5-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-5-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-5-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-5-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-5-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-5-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-5-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-5-sql-ta" style="width:100%; padding:10px" rows="2">DROP TABLE IF EXISTS temporary_schema.simple_table;</textarea>
+                <textarea id="step-5-sql-backup" style="display:none;">DROP TABLE IF EXISTS temporary_schema.simple_table;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-5-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-5-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-5-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-6-wrapper" style="width:800px;"><div id="step-6-instruction" style="margin-bottom:1em">    
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+ビュー</h2>
+    <div class="instructions-div">
+    <p>ビューは他のビュー、テーブル、またはデータファイルから作成することができます。以下のコードでは、salesテーブルからビューを作成しています。</p>
+    <ol>
+        <li>以下のコードを実行します。</li>
+    </ol>
+    </div></div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-6-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-6-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-6-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-6-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-6-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-6-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-6-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-6-sql-ta" style="width:100%; padding:10px" rows="5">CREATE OR REPLACE VIEW high_sales AS
+    SELECT * FROM sales 
+        WHERE total_price > 10000;
+SELECT * FROM high_sales;</textarea>
+                <textarea id="step-6-sql-backup" style="display:none;">CREATE OR REPLACE VIEW high_sales AS
+    SELECT * FROM sales 
+        WHERE total_price > 10000;
+SELECT * FROM high_sales;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-6-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-6-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-6-after_codebox_instruction" style="margin-bottom:1em"><div class="instructions-div">
+    <p>このビューは、合計金額が10,000を超えるすべての売上を提供します。売上テーブルに新しい行が追加された場合、次回実行されるとビューにこれらの行が追加されます。</p>
+    </div>
+    
+    </div></div><hr>
+<div id="step-7-wrapper" style="width:800px;"><div id="step-7-instruction" style="margin-bottom:1em">    
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+    タイムトラベル</h2>
+   <h3>Delta テーブルでの SELECT</h3>
+<div class="instructions-div">
+    <p>次のいくつかのクエリでは、Delta テーブルで <span class="monofont">SELECT</span> を使用する際に特有のコマンドを見ていきます。</p>
+    <p>Delta テーブルは、以下のコマンドを実行することで変更履歴を表示できます。</p>
+    <ol start="1">
+        <li>以下のコードを実行します。</li>
+    </ol>
+</div></div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-7-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-7-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-7-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-7-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-7-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-7-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-7-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-7-sql-ta" style="width:100%; padding:10px" rows="2">DESCRIBE HISTORY customers;</textarea>
+                <textarea id="step-7-sql-backup" style="display:none;">DESCRIBE HISTORY customers;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-7-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-7-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-7-after_codebox_instruction" style="margin-bottom:1em">
+    <div class="instructions-div">
+    <p><span class="monofont">DESCRIBE HISTORY</span>を実行した後、バージョン番号が0であることと、この変更が行われたタイムスタンプが表示されます。</p>
+    </div>
+
+    </div></div><hr>
+<div id="step-8-wrapper" style="width:800px;"><div id="step-8-instruction" style="margin-bottom:1em">    
+
+   <h3>Delta テーブルでの SELECT -- テーブルの更新</h3>
+    <div class="instructions-div">
+    <p>テーブルに2つの別々の変更を加えます。</p>
+    <ol start="2">
+        <li>以下のコードを実行します。</li>
+    </ol>
+    </div></div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-8-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-8-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-8-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-8-sql').style.display = 'block';">答えを表示</button>
+                <button id="step-8-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-8-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-8-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-8-sql-ta" style="width:100%; padding:10px" rows="4">UPDATE customers SET loyalty_segment = 10 WHERE loyalty_segment = 0;
+UPDATE customers SET loyalty_segment = 0 WHERE loyalty_segment = 10;
+DESCRIBE HISTORY customers;</textarea>
+                <textarea id="step-8-sql-backup" style="display:none;">UPDATE customers SET loyalty_segment = 10 WHERE loyalty_segment = 0;
+UPDATE customers SET loyalty_segment = 0 WHERE loyalty_segment = 10;
+DESCRIBE HISTORY customers;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-8-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-8-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-8-after_codebox_instruction" style="margin-bottom:1em">
+    <div class="instructions-div">
+    <p>このコードは、テーブルに2つの変更を加えるために2つの<span class="monofont">UPDATE</span>ステートメントを使用しています。また、<span class="monofont">DESCRIBE HISTORY</span>コマンドを再実行し、更新が新しいタイムスタンプでログに記録されていることに注意してください。Deltaテーブルへのすべての変更はこのようにログに記録されます。</p>
+    </div>
+    
+    </div></div><hr>
+<div id="step-9-wrapper" style="width:800px;"><div id="step-9-instruction" style="margin-bottom:1em">    
+
+   <h3>DeltaテーブルでのSELECT -- 特定バージョンの取得</h3>
+    <div class="instructions-div">
+    <p>Deltaテーブルで使用する特別な述語<span class="monofont">VERSION AS OF</span>を使用できます。</p>
+    <ol start="3">
+        <li>以下のコードを実行します。</li>
+    </ol>
+    <p><span class="monofont">VERSION AS OF</span>を使用することで、テーブルの特定のバージョンから<span class="monofont">SELECT</span>できます。Deltaテーブルのこの機能は"タイムトラベル"と呼ばれ、非常に強力です。</p>
+    <p><span class="monofont">TIMESTAMP AS OF</span>を使用して、特定の日時にテーブルの状態に基づいて<span class="monofont">SELECT</span>することもでき、詳細についてはドキュメントを参照してください。</p>
+
+
+    </div></div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-9-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-9-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-9-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-9-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-9-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-9-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-9-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-9-sql-ta" style="width:100%; padding:10px" rows="2">SELECT loyalty_segment FROM customers VERSION AS OF 1;</textarea>
+<textarea id="step-9-sql-backup" style="display:none;">SELECT loyalty_segment FROM customers VERSION AS OF 1;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-9-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-9-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-9-after_codebox_instruction" style="margin-bottom:1em"><div class="instructions-div">
+        <p>テーブルの選択は、テーブルのバージョン1からの結果を返します。このバージョンでは、0と等しいロイヤリティセグメントが10に変更されていました。これが結果セットに反映されています。</p>
+        </div>
+    </div></div><hr>
+<div id="step-10-wrapper" style="width:800px;"><div id="step-10-instruction" style="margin-bottom:1em">    
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+    過去の状態にテーブルを復元する</h2>
+    <div class="instructions-div">
+    <p>テーブルを以前のバージョンまたはタイムスタンプに復元したい場合は、<span class="monofont">RESTORE</span>コマンドを使用できます。</p>
+    <ol>
+<li>以下のコードを実行します。</li>
+</ol>
+</div></div>
+<div style="display: none;">
+    <div>
+        <textarea id="step-10-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+        <textarea id="step-10-test-backup" style="display:none;"></textarea>
+    </div>
+    <div style="text-align:right; display: none; margin-top:5px">
+        <button id="step-10-test-show-btn" type="button" style="" 
+                onclick="document.getElementById('step-10-sql').style.display = 'block';">答えを表示</button>
+        <button id="step-10-test-btn" type="button"  onclick="
+            let ta = document.getElementById('step-10-test-ta');
+            ta.select();
+            ta.setSelectionRange(0, ta.value.length);
+            navigator.clipboard.writeText(ta.value);">コピー</button>
+    </div>
+</div>
+      
+<div id="step-10-sql" style="width:800px; ">
+<div>
+                <textarea id="step-10-sql-ta" style="width:100%; padding:10px" rows="3">RESTORE TABLE customers TO VERSION AS OF 1;
+DESCRIBE HISTORY customers;</textarea>
+                <textarea id="step-10-sql-backup" style="display:none;">RESTORE TABLE customers TO VERSION AS OF 1;
+DESCRIBE HISTORY customers;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-10-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-10-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-10-after_codebox_instruction" style="margin-bottom:1em">
+    <div class="instructions-div">
+    <p>コードを実行した後、ログに追加されたリストアが表示され、テーブルに<span class="monofont">SELECT</span>を実行した場合、バージョン1での状態が含まれるでしょう。</p>
+    </div>
+    
+    </div></div><script src="script.js"></script>
+<hr style="margin-top:8em">
+        <div>
+            <div>&copy; 2024 Databricks, Inc. All rights reserved.</div>
+            <div>Apache、Apache Spark、SparkおよびSparkロゴは<a href="https://www.apache.org/">Apache Software Foundation</a>の商標です。</div>
+            <div style="margin-top:1em">
+                <div style="float:left">
+                    <a href="https://databricks.com/privacy-policy">プライバシーポリシー</a> | 
+                    <a href="https://databricks.com/terms-of-use">利用規約</a> | <a href="https://help.databricks.com/">サポート</a>
+                </div>
+                <div style="float:right">2.1.1</div>
+            </div>               
+        </div></div></body></html>

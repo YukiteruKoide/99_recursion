@@ -1,0 +1,316 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <title>デモ - ダッシュボードの基礎</title>
+        <link href='https://fonts.googleapis.com/css?family=DM%20Sans' rel='stylesheet' type='text/css'>
+        <style>
+        body {background-color: #f9f7f4;font-family: 'DM Sans', sans-serif;}
+        h2 {color: #ff3621;}
+        h3 {margin-left: 5px}
+        ol {margin-left: 20px; font-family:sans-serif; color: #0873FF;} //E81334 618794
+        ol li {margin-bottom:5px;}
+        td {padding: 5px;border-bottom: 1px solid #ededed;}
+        tr.selected td {color: white;background-color: red;}
+        .monofont {font-family: monospace; font-size: 14px}
+        .content {max-width: 800px; margin: auto; padding-left: 50px}
+        .image-icon-inline {display:inline; vertical-align: middle; margin: 0 10px 0 10px}
+        .instructions-div {padding-left: 5px}
+    </style>
+            </head>
+            <body onload="loaded()">
+                <div class="content">
+                    <img src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/db-academy-rgb-1200px_no_bg.png" 
+                        alt="Databricks Learning" 
+                        style="width: 600px; margin-left: 100px; margin-right: 100px">
+                <hr>
+                <h1>デモ - ダッシュボードの基本</h1><div id="inputs">
+                    <p>以下の2つのフィールドは、このコースで使用されるクエリをカスタマイズするために使用されます。</p>
+                    <p><span style="color:red">注意:</span> 以下の2つのフィールドにカタログ名とユーザー名が含まれていない場合、Cookieが有効になっていないか、<a href="Demo-Setting-Up-a-Catalog-and-Schema.html" target="_blank">こちら</a>の手順に従う必要があります。</p>
+                    <table>
+                        <tr>
+                            <td style="white-space:nowrap">カタログ名:&nbsp;</td>
+                            <td><input id="catalog_name" type="text" style="width:40em" onchange="update();"></td>
+                        </tr><tr>
+                            <td style="white-space:nowrap">ユーザー名:&nbsp;</td>
+                            <td><input id="username" type="text" style="width:40em" onchange="update();"></td>
+                        </tr>
+                    </table>
+                </div><hr>
+<div id="step-1-wrapper" style="width:800px;"><div id="step-1-instruction" style="margin-bottom:1em">    
+
+    <h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+    レッスンの目標</h2>
+    <div class="instructions-div">
+    <p>このレッスンの終わりに、以下を行うことができるようになります:</p>
+    <ul>
+        <li>Databricks SQLクエリから複数の既存の可視化を使用してダッシュボードを作成する。</li>
+        <li>ステークホルダーが結果と可視化をカスタマイズできるように、フィルターとパラメータを使用してクエリとダッシュボードを作成する。</li>
+        <li>適切な権限を持つステークホルダーとクエリ、ダッシュボードを共有する。</li>
+        <li>Databricks SQLプラットフォーム内でワークスペースオブジェクト、クエリ、ダッシュボードを整理してラベル付けする。</li>
+    </ul></div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-1-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-1-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-1-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-1-sql').style.display = 'block';">答えを表示</button>
+                <button id="step-1-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-1-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-1-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-1-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-1-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-1-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-2-wrapper" style="width:800px;"><div id="step-2-instruction" style="margin-bottom:1em">    
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+ダッシュボード</h2>
+    <div class="instructions-div">
+    <p>これで、上記で作成したすべてのビジュアライゼーションを1つのダッシュボードに組み合わせ、一度にすべてを表示し、更新スケジュールに設定して各ビジュアライゼーションの基になるデータを常に最新の状態に保つことができます。将来のレッスンでは、更新スケジュールを設定し、ステークホルダーをダッシュボードの出力に登録し、常に最新情報を入手できるようにする方法について説明します。</p>
+    <p>以前に作成したダッシュボードがすでにある場合は、以下のステップ2および3をスキップし、ダッシュボードの名前をクリックするだけでかまいません。</p>
+    <p>以下を完了してください:</p>
+    <ol>      
+        <li>サイドバーメニューで「ダッシュボード」をクリックします</li>
+        <li>「ダッシュボードの作成」をクリックします</li>
+        <li>ダッシュボードの名前を「小売部門」とします</li>
+        <li>ダッシュボードの右上隅にある3つの垂直に並んだ点（ケバブメニュー）をクリックします</li>
+        <li>ドロップダウンメニューから「編集」オプションを選択します</li>
+        <li>「追加」をクリックし、「可視化」をクリックします</li>
+    </ol>
+<p>保存されたクエリのリストが表示されます。クエリの名前は、作成した可視化の種類に基づいていますが、クエリの名前をそのクエリが行う操作に基づいて命名する方がより適切です。</p>
+<ol start="7">
+    <li>「総売上カウンター」をクリックします</li>
+    <li>「既存の可視化を選択」が選択されたままにして、直下のリストをドロップダウンします。クエリからの結果テーブルとカウンター可視化「総売上」が利用可能です。 「総売上」を選択します</li>
+    <li>「タイトル」を「総売上」に変更します</li>
+    <li>任意: 説明を書きます</li>
+    <li>「ダッシュボードに追加」をクリックします</li>
+    <li>「3か月の売上」クエリ（「月別売上」と「商品カテゴリ別売上」）、「州別の顧客数」クエリ（「最もアクティブな州」）、および「すべての顧客」クエリ（「顧客ロケーション」）を使用して手順4〜9を繰り返します</li>
+</ol>
+<p>ダッシュボードには5つの可視化が表示されるはずです</p>
+<ol start="13">
+    <li>「追加」をクリックし、次に「テキストボックス」をクリックし、「編集：」ボックスに「# 顧客と売上」と入力します</li>
+</ol>
+<p>テキストボックスはMarkdownをサポートしていることに注意してください</p>
+<ol start="14">
+    <li>「ダッシュボードに追加」をクリックします</li>
+    <li>任意: 各可視化をクリックしてドラッグして、配置を変更します</li>
+    <li>任意: 各可視化の右下隅をドラッグしてサイズを変更します</li>
+    <li>任意: ダッシュボード内の可視化で使用されるカラーパレットを変更するには、「カラー」をクリックします</li>
+    <li>右上隅にある「編集を終了」をクリックします</li>
+        <li>すべてのクエリを実行し、すべての可視化を一度に更新するには、「更新」をクリックしてください</li>
+    </ol> 
+    </div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-2-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-2-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-2-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-2-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-2-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+<div id="step-2-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-2-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-2-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-2-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-2-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-3-wrapper" style="width:800px;"><div id="step-3-instruction" style="margin-bottom:1em">    
+
+<h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+パラメータ化されたクエリ</h2>
+    <div class="instructions-div">
+<p>このレッスンを終える前に、クエリに適用できるカスタマイズ機能について話しましょう。クエリパラメータを使用すると、新しいコードを書かずにクエリを変更できます。</p>
+<p>以下を完了してください：</p>
+<ol>
+    <li>クエリエディタに戻り、新しいクエリを開始します</li>
+    <li>以下のクエリをエディタに貼り付けて、クエリを「製品カテゴリを取得」として保存します</li>
+</ol>
+</div>
+</div>
+<div style="display: none;">
+    <div>
+        <textarea id="step-3-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+        <textarea id="step-3-test-backup" style="display:none;"></textarea>
+    </div>
+    <div style="text-align:right; display: none; margin-top:5px">
+        <button id="step-3-test-show-btn" type="button" style="" 
+                onclick="document.getElementById('step-3-sql').style.display = 'block';">回答を表示</button>
+        <button id="step-3-test-btn" type="button"  onclick="
+            let ta = document.getElementById('step-3-test-ta');
+            ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-3-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-3-sql-ta" style="width:100%; padding:10px" rows="2">SELECT DISTINCT product_category FROM sales;</textarea>
+                <textarea id="step-3-sql-backup" style="display:none;">SELECT DISTINCT product_category FROM sales;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-3-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-3-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-3-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-4-wrapper" style="width:800px;"><div id="step-4-instruction" style="margin-bottom:1em">  
+<h3>パラメーターを使用したクエリの作成</h3>
+    <div class="instructions-div">
+    <p>「Sales」テーブルからすべての製品カテゴリを取得するクエリを持っているので、このクエリを第二のクエリのパラメーターとして使用しましょう。</p>
+    <p>以下を完了してください:</p>
+    <ol start="3">
+        <li>新しいクエリを開始し、以下のコードをエディターに貼り付けます</li>
+    </ol>
+    <p>クエリに空のシングルクォートがあることに注意してください。</p>
+    <ol start="4">
+        <li>シングルクォートの間にカーソルを置き、"+" シンボルをホバーして "Parameter" をクリックします</li>
+        <li>"Keyword" フィールドに "category" を入力します</li>
+        <li>"Type" をドロップダウンし、"Query Based Dropdown List" を選択します</li>
+        <li>"Query" には上記で作成したクエリを選択します: "製品カテゴリを取得"</li>
+        <li>"Add Parameter" をクリックします</li>
+        <li>クエリを "製品カテゴリ別総売上" として保存します</li>
+    </ol>
+    <p>2 つのことに注意してください: 最初に、"category" という単語が含まれる二重中括弧があることです。これがクエリパラメーターが挿入された部分です。最後に、クエリ結果ウィンドウの直上にあるドロップダウンリストに注目してください。</p>
+    <ol start="10">
+        <li>ドロップダウンリストを開き、リストからカテゴリを選択します</li>
+        <li>「変更を適用」をクリックします</li>
+    </ol>
+    <p>選択した製品カテゴリでクエリが再実行され、クエリ内のクエリパラメータの位置に選択した製品カテゴリが置換されます。したがって、私たちは選択したカテゴリの総売上を見ることができます。</p>
+    </div>
+    
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-4-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-4-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-4-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-4-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-4-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-4-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-4-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-4-sql-ta" style="width:100%; padding:10px" rows="3">SELECT sum(total_price) AS Total_Sales FROM sales
+    WHERE product_category = '';</textarea>
+                <textarea id="step-4-sql-backup" style="display:none;">SELECT sum(total_price) AS Total_Sales FROM sales
+    WHERE product_category = '';</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-4-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-4-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-4-after_codebox_instruction" style="margin-bottom:1em"></div></div><hr>
+<div id="step-5-wrapper" style="width:800px;"><div id="step-5-instruction" style="margin-bottom:1em"><h2><img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon" />
+クエリ、アラート、およびダッシュボードの整理</h2>
+<div class="instructions-div">
+    <p>クエリ、アラート、ダッシュボードはフォルダ構造で整理することができ、作業の場所を把握するのに役立ちます。</p>
+    <ol start="1">
+        <li>サイドバーのメニューで「ワークスペース」をクリックします</li>
+    </ol>
+    <p>ホームフォルダに移動します。このレッスンで作成したダッシュボードや保存した他のワークスペースオブジェクトが表示されます。</p>
+    <ol start="2">
+        <li>「追加」をクリックします</li>
+        <li>作成できるアイテムの種類を確認します</li>
+        <li>利用可能なオプションから「フォルダ」を選択します</li>
+        <li>「私の素晴らしいプロジェクト」などユニークな名前を付け、「作成」をクリックします</li>
+        <li>新しいフォルダの内容に移動するので、ホームフォルダに戻ります</li>
+        <li>このレッスンのダッシュボードや他のオブジェクトを新しいフォルダにドラッグアンドドロップします</li>
+        <li>フォルダ名をクリックしてフォルダを開き、ダッシュボードがフォルダ内に移動されたことを確認します</li>
+    </ol>
+    <p>プロジェクトごと、ブロンズデータやシルバーデータに対応するクエリなど、自由にフォルダを入れ子にできます。</p> 
+</div>
+<div style="display: none;">
+    <div>
+        <textarea id="step-5-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-5-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-5-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-5-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-5-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-5-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-5-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-5-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-5-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-5-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-5-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-5-after_codebox_instruction" style="margin-bottom:1em"></div></div><script src="script.js"></script>
+        <hr style="margin-top:8em">
+        <div>
+            <div>&copy; 2024 Databricks, Inc. All rights reserved.</div>
+            <div>Apache、Apache Spark、SparkおよびSparkロゴは<a href="https://www.apache.org/">Apache Software Foundation</a>の商標です。</div>
+            <div style="margin-top:1em">
+                <div style="float:left">
+                    <a href="https://databricks.com/privacy-policy">プライバシーポリシー</a> | 
+                    <a href="https://databricks.com/terms-of-use">利用規約</a> | <a href="https://help.databricks.com/">サポート</a>
+                </div>
+                <div style="float:right">2.1.1</div>
+            </div>               
+        </div></div></body></html>

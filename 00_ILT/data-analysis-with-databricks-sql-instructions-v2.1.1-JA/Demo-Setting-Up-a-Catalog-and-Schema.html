@@ -1,0 +1,284 @@
+        <!DOCTYPE html>
+        <html lang="ja">
+            <head>
+                <meta charset="utf-8">
+                <title>Demo - Setting Up a Catalog and Schema</title>
+                <link href='https://fonts.googleapis.com/css?family=DM%20Sans' rel='stylesheet' type='text/css'>
+                <style>
+                body {background-color: #f9f7f4;font-family: 'DM Sans', sans-serif;}
+                h2 {color: #ff3621;}
+                h3 {margin-left: 5px}
+                ol {margin-left: 20px; font-family:sans-serif; color: #0873FF;} //E81334 618794
+                ol li {margin-bottom:5px;}
+                td {padding: 5px;border-bottom: 1px solid #ededed;}
+                tr.selected td {color: white;background-color: red;}
+                .monofont {font-family: monospace; font-size: 14px}
+                .content {max-width: 800px; margin: auto; padding-left: 50px}
+                .image-icon-inline {display:inline; vertical-align: middle; margin: 0 10px 0 10px}
+                .instructions-div {padding-left: 5px}
+            </style>
+            </head>
+            <body onload="loaded()">
+                <div class="content">
+                    <img src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/db-academy-rgb-1200px_no_bg.png" 
+                        alt="Databricks Learning" 
+                        style="width: 600px; margin-left: 100px; margin-right: 100px">
+                <hr>
+                <h1>デモ - カタログとスキーマの設定</h1><hr>
+<div id="step-1-wrapper" style="width:800px;"><div id="step-1-instruction" style="margin-bottom:1em">
+<h2>
+        <img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon">
+        ユーザー名の取得</h2>
+    <div class="instructions-div">
+        <p>このコースでは、ユーザー名が必要です。これを取得する最も簡単な方法は、クエリを実行することです。</p>
+        <p>Databricks SQLで新しいクエリを開始する方法はいくつかありますが、最も簡単な方法を使用します。</p>
+        <ol>
+            <li>サイドバーメニューで [新規] --> [クエリ] をクリックします</li>
+        </ol>
+        <p>これがDatabricks SQLのクエリエディターです。クエリエディターの次の機能に注意してください:</p>
+        <ul>
+
+
+            <li>スキーマブラウザ</li>
+            <li>タブ付きインターフェース</li>
+            <li>結果ビュー</li>
+        </ul>
+        <p>クエリを実行するには、ウェアハウスが選択されていることを確認する必要があります。</p>
+        <ol start="2">
+            <li>画面右上にある「保存」とラベルされたボタンの左にあるドロップダウンをクリックします</li>
+        </ol>
+        <p>このドロップダウンには、アクセス権があるSQLウェアハウスがリストされています。1つのウェアハウスにのみアクセス権がある場合があります。その場合は、このウェアハウスを選択します。リストに複数のウェアハウスがある場合は、組織の要件に合ったウェアハウスを選択してください。</p>
+        
+    <h3>ユーザー名を追加</h3>
+    <div class="instructions-div">
+        <p>コースのカリキュラムが正しく機能するために、ユーザー名を取得する必要があります。</p>
+        <p>以下のテキストボックスには、ユーザー名を返すクエリが含まれています。</p>
+        <p>以下を実行してください:</p>
+        <ol start="3">
+            <li>テキストボックスにあるコードをクエリエディタに貼り付けて、「クエリエディタで実行」をクリックします</li>
+        </ol>
+        </div>
+    </div>
+
+
+        <div style="display: none;">
+            <div>
+                <textarea id="step-1-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-1-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-1-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-1-sql').style.display = 'block';">答えを表示</button>
+                <button id="step-1-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-1-sql" style="width:800px; ">
+            <div>
+                <textarea id="step-1-sql-ta" style="width:100%; padding:10px" rows="2">SELECT current_user();</textarea>
+                <textarea id="step-1-sql-backup" style="display:none;">SELECT current_user();</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-1-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-1-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-1-after_codebox_instruction" style="margin-bottom:1em">
+        <div class="instructions-div">
+            <ol start="4">
+                <li>ユーザー名を以下のボックスに貼り付けます。</li>
+                <li>キーボードのEnter/Returnキーを押します。</li>
+            </ol>
+            <p>今後のクエリでユーザー名を使用します。</p>
+        </div>
+    </div><table>
+                        <tr>
+                            <td style="white-space:nowrap">ユーザー名:&nbsp;</td>
+
+
+                        <td><input id="username" type="text" style="width:40em" onchange="update();"></td>
+                        </tr>
+                        <tr>
+                            <td>現在のユーザー名:</td>
+                            <td id="username-input-msg"></td>
+                        </tr>
+                    </table></div><hr>
+<div id="step-2-wrapper" style="width:800px;"><div id="step-2-instruction" style="margin-bottom:1em">
+
+    
+        <h3>カタログを作成する</h3>
+        <p>このコース全体で使用するカタログを作成します。以下のテキストボックスに、あなた自身に特有のユニークなカタログ名を作成し、Enter/Return キーを押してください。例: 'firstname_lastname_DAWD_date'。このカタログはコース全体で使用されるため、カタログ名が一意であることを確認してください。</p>
+        </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-2-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-2-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-2-test-show-btn" type="button" style="display:none;" 
+
+
+                        onclick="document.getElementById('step-2-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-2-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-2-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-2-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-2-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-2-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-2-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+
+
+            </div>
+        </div>
+        <div id="step-2-after_codebox_instruction" style="margin-bottom:1em"></div><table>
+                        <tr>
+                            <td style="white-space:nowrap">カタログ名:&nbsp;</td>
+                            <td><input id="catalog_name" type="text" style="width:40em" onchange="update();"></td>
+                        </tr>
+                        <tr>
+                            <td>現在のカタログ名:</td>
+                            <td id="catalog-input-msg"></td>
+                        </tr>
+                    </table></div><hr>
+<div id="step-3-wrapper" style="width:800px;"><div id="step-3-instruction" style="margin-bottom:1em">
+        <div class="instructions-div">
+        <p>カタログ名を入力した後、以下を完了してください:</p>
+            <ol>
+                <li>コードをコピーして貼り付ける</li>
+                <li>キーボードのEnter/Returnを押す</li>
+            </ol>
+            <p>このカタログ名は、今後このコースで生成される <span class="monofont">USE</span> ステートメントのクエリで使用されます。</p>
+
+
+        </div>
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-3-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-3-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+                <button id="step-3-test-show-btn" type="button" style="" 
+                        onclick="document.getElementById('step-3-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-3-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-3-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-3-sql" style="width:800px; ">
+            <div>
+<textarea id="step-3-sql-ta" style="width:100%; padding:10px" rows="4">CREATE CATALOG IF NOT EXISTS {catalog_name};
+USE CATALOG {catalog_name};
+CREATE SCHEMA IF NOT EXISTS dawd_v2;</textarea>
+                <textarea id="step-3-sql-backup" style="display:none;">CREATE CATALOG IF NOT EXISTS {catalog_name};
+USE CATALOG {catalog_name};
+CREATE SCHEMA IF NOT EXISTS dawd_v2;</textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-3-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-3-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-3-after_codebox_instruction" style="margin-bottom:1em">
+        <div class="instructions-div">
+         <p>同じ名前のカタログがすでに存在する場合、そのことについて通知は受け取れませんので、トレーニングに使用する際には一意の名前を使用してください。</p>   
+        </div>
+    </div></div><hr>
+
+
+<div id="step-4-wrapper" style="width:800px;"><div id="step-4-instruction" style="margin-bottom:1em">
+
+    <h2>
+        <img class="image-icon-inline" src="https://s3.us-west-2.amazonaws.com/files.training.databricks.com/images/step-icon_small.png" alt="heading-icon">
+        "Use"の代わりに (Lose the "Use") </h2>
+    <div class="instructions-div">
+        <p>Databricks SQLを使用すると、USEステートメントを追加する必要なくクエリを実行できます。クエリ入力ウィンドウのすぐ上、実行ボタンの右側に、2つのドロップダウンがあります。</p>
+        <ol>
+            <li>最初のドロップダウンを開き、カタログ名を選択します</li>
+            <li>2番目のドロップダウンを開き、スキーマ名を「dawd_v2」に設定します</li>
+        </ol>
+        <p>これで、すべてのクエリは、USEステートメントなしで、カタログ内のDAWD_v2スキーマに対して実行されます。</p>
+    </div>
+    </div>
+        <div style="display: none;">
+            <div>
+                <textarea id="step-4-test-ta" style="width:100%; padding:10px; overflow-x:auto" rows="2"></textarea>
+                <textarea id="step-4-test-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; display: none; margin-top:5px">
+
+
+                <button id="step-4-test-show-btn" type="button" style="display:none;" 
+                        onclick="document.getElementById('step-4-sql').style.display = 'block';">回答を表示</button>
+                <button id="step-4-test-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-4-test-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+          
+        <div id="step-4-sql" style="width:800px; display: none;">
+            <div>
+                <textarea id="step-4-sql-ta" style="width:100%; padding:10px" rows="2"></textarea>
+                <textarea id="step-4-sql-backup" style="display:none;"></textarea>
+            </div>
+            <div style="text-align:right; margin-top:5px">
+                <button id="step-4-sql-btn" type="button"  onclick="
+                    let ta = document.getElementById('step-4-sql-ta');
+                    ta.select();
+                    ta.setSelectionRange(0, ta.value.length);
+
+
+                    navigator.clipboard.writeText(ta.value);">コピー</button>
+            </div>
+        </div>
+        <div id="step-4-after_codebox_instruction" style="margin-bottom:1em"></div></div><script src="script.js">
+        </script><script>
+                    document.getElementById("catalog_name").value = "n/a";
+                    document.getElementById("username").value = "n/a";
+                    
+            </script><script>
+                    document.getElementById("catalog_name").value = "なし";
+                    document.getElementById("username").value = "ユーザー名を入力してください（@記号を含む）";
+            </script>
+        <hr style="margin-top:8em">
+        <div>
+            <div>&copy; 2024 Databricks, Inc. All rights reserved.</div>
+            <div>Apache、Apache Spark、SparkおよびSparkロゴは<a href="https://www.apache.org/">Apache Software Foundation</a>の商標です。</div>
+            <div style="margin-top:1em">
+                <div style="float:left">
+                    <a href="https://databricks.com/privacy-policy">プライバシーポリシー</a> | 
+                    <a href="https://databricks.com/terms-of-use">利用規約</a> | <a href="https://help.databricks.com/">サポート</a>
+
+
+                </div>
+                <div style="float:right">2.1.1</div>
+            </div>               
+        </div></div></body></html>
+
